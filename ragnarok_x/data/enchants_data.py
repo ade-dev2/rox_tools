@@ -170,6 +170,8 @@ ACCESSORY_STAT_FIELD_MAP: dict[str, str] = {
     "Crit Damage Reduction":    "crit_dmg_reduc",
     "ASPD":                     "aspd",
     "Final ASPD":               "aspd",
+    "[Size] DMG Inc":           "size_enhance",
+    "[Size] DMG Red":           "size_reduc",
 }
 
 ARMOR_EQUIP_LABEL      = "Armor"
