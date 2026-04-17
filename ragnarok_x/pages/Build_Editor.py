@@ -15,7 +15,7 @@ from build_store import (
     EDITOR_GROUPS,
     init_store, get_builds, save_build, delete_build,
     get_build_offensive, get_build_defensive, get_build_weapon_meta,
-    render_sidebar,
+    render_sidebar, render_stats_panel,
 )
 from data.enchants_data import (
     get_enchant_awakening_info, get_enchant_quality_values,
@@ -350,6 +350,17 @@ weapon_meta = {
     "sub_enchants":          sub_enchants,
     "drake_card":            st.session_state.get("be_wm_drake_card",            False),
 }
+
+# ── Floating stats panel ───────────────────────────────────────────────────
+if is_new:
+    render_stats_panel(off_vals, def_vals)
+else:
+    render_stats_panel(
+        off_vals, def_vals,
+        off_baseline=get_build_offensive(selected),
+        def_baseline=get_build_defensive(selected),
+        show_all=True,
+    )
 
 st.divider()
 

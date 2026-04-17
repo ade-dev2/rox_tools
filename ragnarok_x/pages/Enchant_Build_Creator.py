@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import streamlit as st
 from build_store import (
     OFFENSIVE_FIELDS, DEFENSIVE_FIELDS, FLOAT_PCT_FIELDS,
-    init_store, save_build, render_sidebar,
+    init_store, save_build, render_sidebar, render_stats_panel,
 )
 from data.enchants_data import (
     ARMOR_STAT_FIELD_MAP, ACCESSORY_STAT_FIELD_MAP,
@@ -231,40 +231,19 @@ fe_def_final: dict = {}
 for f, v in fe_def_acc.items():
     fe_def_final[f] = round(v, 2) if f in FLOAT_PCT_FIELDS else int(round(v))
 
-# ── Preview ────────────────────────────────────────────────────────────────
+# ── Floating stats panel ───────────────────────────────────────────────────
+render_stats_panel(fe_off_final, fe_def_final)
+
+# ── Full stat sheet (detail review before saving) ──────────────────────────
 st.divider()
-_off_defaults = {f: dflt for f, (_, dflt) in OFFENSIVE_FIELDS.items()}
-_def_defaults = {f: dflt for f, (_, dflt) in DEFENSIVE_FIELDS.items()}
-_ALWAYS_SHOW_OFF = {"patk", "crit_dmg_bonus", "weapon_size_modifier", "elemental_counter"}
-
-_changed_off = {f for f, v in fe_off_final.items() if v != _off_defaults[f]}
-_changed_def = {f for f, v in fe_def_final.items() if v != _def_defaults[f]}
-
-if _changed_off or _changed_def:
-    st.markdown("**Computed Stats Preview**")
-    col_prev_off, col_prev_def = st.columns(2)
-    with col_prev_off:
-        st.markdown("*Offensive*")
+with st.expander("Full stat sheet", expanded=False):
+    col_full_off, col_full_def = st.columns(2)
+    with col_full_off:
         for f, (lbl, _) in OFFENSIVE_FIELDS.items():
-            if f in _changed_off or f in _ALWAYS_SHOW_OFF:
-                delta = round(fe_off_final[f] - _off_defaults[f], 4) or None
-                st.metric(lbl, fe_off_final[f], delta=delta if f in _changed_off else None)
-    with col_prev_def:
-        st.markdown("*Defensive*")
+            st.text(f"{lbl}: {fe_off_final[f]}")
+    with col_full_def:
         for f, (lbl, _) in DEFENSIVE_FIELDS.items():
-            if f in _changed_def:
-                delta = round(fe_def_final[f] - _def_defaults[f], 4) or None
-                st.metric(lbl, fe_def_final[f], delta=delta)
-    with st.expander("Full stat sheet", expanded=False):
-        col_full_off, col_full_def = st.columns(2)
-        with col_full_off:
-            for f, (lbl, _) in OFFENSIVE_FIELDS.items():
-                st.text(f"{lbl}: {fe_off_final[f]}")
-        with col_full_def:
-            for f, (lbl, _) in DEFENSIVE_FIELDS.items():
-                st.text(f"{lbl}: {fe_def_final[f]}")
-else:
-    st.info("Select enchants above to preview the resulting build stats.")
+            st.text(f"{lbl}: {fe_def_final[f]}")
 
 # ── Save ───────────────────────────────────────────────────────────────────
 st.divider()
