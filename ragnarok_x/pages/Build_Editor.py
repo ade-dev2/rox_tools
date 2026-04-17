@@ -330,6 +330,7 @@ with tab_enchants:
 
 # ── Tab 3: Cards ──────────────────────────────────────────────────────────
 with tab_cards:
+
     drake_card = st.toggle(
         "Drake Card",
         key="be_wm_drake_card",

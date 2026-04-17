@@ -151,6 +151,72 @@ def get_enchant_quality_values(
     return result
 
 
+# Armor enchant stat_en → DEFENSIVE_FIELDS key
+ARMOR_STAT_FIELD_MAP: dict[str, str] = {
+    "DMG Reduction":                    "pdmg_reduc",
+    "Final DEF %":                      "total_final_def",
+    "Final DMG Red %":                  "final_dmg_reduc",
+    "Final P.DEF %":                    "final_pdmg_reduc",
+    "PvP Final P.DMG/M.DMG Reduction":  "pvp_final_pdmg_reduc",
+    "PvP P.DMG/M.DMG Reduction":        "pvp_pdmg_reduc",
+    "[Element] Res":                    "element_resist",
+    "[Race] Monster DMG Red":           "race_reduc",
+}
+
+# Accessory enchant stat_en → OFFENSIVE_FIELDS / DEFENSIVE_FIELDS key
+ACCESSORY_STAT_FIELD_MAP: dict[str, str] = {
+    "Final Pen %":              "total_final_pen",
+    "Crit Damage":              "crit_dmg_bonus",
+    "Crit Damage Reduction":    "crit_dmg_reduc",
+    "ASPD":                     "aspd",
+    "Final ASPD":               "aspd",
+}
+
+ARMOR_EQUIP_LABEL      = "Armor"
+ACCESSORY_EQUIP_LABEL  = "Accessories"
+
+
+def get_enchant_cities_by_equip(equip_label: str, stat_en: str) -> list[str]:
+    """Return sorted list of cities offering stat_en for the given equipment label."""
+    mask = (
+        (_ENCHANTS_DF["equipment_en"] == equip_label) &
+        (_ENCHANTS_DF["stat_en"] == stat_en)
+    )
+    return sorted(_ENCHANTS_DF[mask]["location"].dropna().unique().tolist())
+
+
+def get_enchant_quality_values_by_equip(
+    equip_label: str,
+    enchant_level: int,
+    stat_en: str,
+    modifier: float = 1.0,
+    city: str | None = None,
+) -> dict[str, float]:
+    """
+    Return {quality_name: effective_value} for a stat at the given level/city,
+    identified by equipment label rather than weapon type.
+    """
+    mask = (
+        (_ENCHANTS_DF["equipment_en"] == equip_label) &
+        (_ENCHANTS_DF["level"] == enchant_level) &
+        (_ENCHANTS_DF["stat_en"] == stat_en)
+    )
+    if city is not None:
+        mask = mask & (_ENCHANTS_DF["location"] == city)
+
+    rows = _ENCHANTS_DF[mask]
+    if rows.empty:
+        return {}
+
+    result = {}
+    for qual_name, col in _QUALITY_COL.items():
+        if col in rows.columns:
+            best = rows[col].max()
+            if pd.notna(best):
+                result[qual_name] = round(float(best) * modifier, 4)
+    return result
+
+
 def get_weapon_enchant_options(
     weapon_type: str,
     enchant_level: int,
