@@ -47,7 +47,7 @@ col_level, col_city, col_equip, col_stat = st.columns([1, 2, 2, 3])
 
 with col_level:
     level = st.number_input(
-        "Enchant Level", min_value=1, max_value=20, value=10, step=1,
+        "Enchant Level", min_value=1, max_value=20, value=20, step=1,
         help="The enchant level (1–20)"
     )
 
