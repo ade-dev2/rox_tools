@@ -902,7 +902,7 @@ export default function(component) {
         tab.id = 'stec-tab';
         tab.textContent = '📊 Stats';
         Object.assign(tab.style, {
-            position: 'fixed', bottom: '24px', right: '24px',
+            position: 'fixed', top: '70px', right: '24px',
             background: '#1a2332', border: '1px solid #253348',
             borderRadius: '8px', padding: '6px 14px',
             fontSize: '13px', fontWeight: '600', color: '#e0e0e0',
