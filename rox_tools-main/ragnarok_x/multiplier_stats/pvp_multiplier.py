@@ -1,0 +1,123 @@
+import dataclasses
+from dataclasses import dataclass
+
+from .pve_multiplier import pen_multiplier
+
+# Multiplicative factors cannot drop below this floor.
+_FLOOR = 0.2
+
+
+# ---------------------------------------------------------------------------
+# Stat dataclasses
+# ---------------------------------------------------------------------------
+@dataclass
+class PlayerStats:
+    patk: float                 # Physical/Magical Attack
+    crit_dmg_bonus: float       # Crit DMG Bonus multiplier (e.g. 1.5 = +50% crit dmg)
+    pdmg_bonus: float           # Flat P.DMG/M.DMG Bonus
+    pdmg_bonus_pct: float       # % P.DMG/M.DMG Bonus (e.g. 0.20 = 20%)
+    final_pdmg_bonus: float     # Final P.DMG/M.DMG Bonus
+    weapon_size_modifier: float # Weapon Size Modifier (e.g. 1.0 base)
+    size_enhance: float         # Bonus DMG to Size
+    bonus_dmg_race: float       # Bonus DMG to Race
+    elemental_counter: float    # Elemental Counter (e.g. 1.5 for counter element)
+    element_enhance: float      # Element Enhance
+    final_dmg_bonus: float      # Final DMG Bonus
+    pvp_final_pdmg_bonus: float # PVP Final P.DMG/M.DMG Bonus
+    pvp_pdmg_bonus: float       # PVP P.DMG/M.DMG Bonus (flat additive, outside all factors)
+    total_final_pen: float = 0.0  # Total Final PEN (penetration mode only)
+
+
+@dataclass
+class TargetStats:
+    crit_dmg_reduc: float       # Target's Crit DMG Reduction
+    pdmg_reduc: float           # Target's flat P.DMG/M.DMG Reduction
+    final_pdmg_reduc: float     # Target's Final P.DMG/M.DMG Reduction
+    element_resist: float       # Target's Element Resist
+    size_reduc: float           # Target's Size Reduction
+    race_reduc: float           # Target's Race Reduction
+    final_dmg_reduc: float      # Target's Final DMG Reduction
+    pvp_pdmg_reduc: float       # Target's PVP P.DMG/M.DMG Reduction
+    pvp_final_pdmg_reduc: float # Target's PVP Final P.DMG/M.DMG Reduction
+    total_final_def: float = 0.0  # Target's Total Final DEF (penetration mode only)
+
+
+# ---------------------------------------------------------------------------
+# Core functions
+#
+# Crit formula:
+#   (8 × (
+#       (P/MATK × (Crit DMG Bonus - Target Crit DMG Reduc)
+#        + P.DMG/M.DMG Bonus × (1 + P.DMG/M.DMG Bonus%) - Target P.DMG/M.DMG Reduc)
+#       × max(1 + Final P.DMG/M.DMG Bonus - Target Final P.DMG/M.DMG Reduc, 0.2)
+#       × max(Weapon Size Modifier + Size Enhance - Size Reduction, 0.2)
+#       × max(1 + Bonus DMG to Race - Race Reduction, 0.2)
+#       × max(Elemental Counter + Element Enhance - Element Resist, 0.2)
+#       × max(1 + Final DMG Bonus - Target Final DMG Reduc, 0.2)
+#   ) ^ 0.6 - Target PVP P.DMG/M.DMG Reduc)
+#   × max(1 + PVP Final P.DMG/M.DMG Bonus - Target PVP Final P.DMG/M.DMG Reduc, 0.2)
+#   + PVP P.DMG/M.DMG Bonus
+#
+# Penetration formula replaces the ATK multiplier:
+#   pen_diff = Total Final PEN - Target Total Final DEF
+#   pen_mult = (1 + pen_diff)           if pen_diff <= 1.5
+#            = (1 + pen_diff×2 - 1.5)   if pen_diff >  1.5
+# ---------------------------------------------------------------------------
+def calculate_multiplier(
+    player: PlayerStats, target: TargetStats, damage_type: str = "crit",
+    attack_mult: int = 8,
+) -> float:
+    """Return the overall PVP damage multiplier for the given player and target stats.
+
+    damage_type: "crit" (default) or "pen" (penetration).
+    attack_mult: 8 for normal attacks, 16 for skill attacks.
+    """
+    if damage_type == "pen":
+        atk_mult = pen_multiplier(player.total_final_pen - target.total_final_def)
+    else:
+        atk_mult = max(player.crit_dmg_bonus - target.crit_dmg_reduc, _FLOOR)
+
+    base = (
+        player.patk * atk_mult
+        + player.pdmg_bonus * (1 + player.pdmg_bonus_pct)
+        - target.pdmg_reduc
+    )
+    inner = (
+        base
+        * max(1 + player.final_pdmg_bonus - target.final_pdmg_reduc, _FLOOR)
+        * max(player.weapon_size_modifier + player.size_enhance - target.size_reduc, _FLOOR)
+        * max(1 + player.bonus_dmg_race - target.race_reduc, _FLOOR)
+        * max(player.elemental_counter + player.element_enhance - target.element_resist, _FLOOR)
+        * max(1 + player.final_dmg_bonus - target.final_dmg_reduc, _FLOOR)
+    )
+    return (
+        (attack_mult * inner ** 0.6 - target.pvp_pdmg_reduc)
+        * max(1 + player.pvp_final_pdmg_bonus - target.pvp_final_pdmg_reduc, _FLOOR)
+        + player.pvp_pdmg_bonus
+    )
+
+
+def modifier_weights(
+    player: PlayerStats, target: TargetStats, damage_type: str = "crit",
+    attack_mult: int = 8,
+) -> dict[str, float]:
+    """
+    Return the marginal value of each player stat via finite differences.
+
+    Uses calculate_multiplier (with floored factors) so weights automatically
+    drop to 0 for any stat whose factor is pinned at the 0.2 floor.
+    Note: stats inside the ^0.6 term have diminishing returns.
+    """
+    base = calculate_multiplier(player, target, damage_type, attack_mult)
+    eps = 1e-4
+    return {
+        field: (
+            calculate_multiplier(
+                dataclasses.replace(player, **{field: getattr(player, field) + eps}),
+                target,
+                damage_type,
+                attack_mult,
+            ) - base
+        ) / eps
+        for field in player.__dataclass_fields__
+    }
