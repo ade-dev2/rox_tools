@@ -18,3 +18,21 @@ Host github.com
 EOF
 
 ---
+## 2026-05-10 — upgrade pip first, then install:
+**Provider:** minimax
+**Rationale:** (auto-detected)
+**Source:** The `streamlit.components.v2` module needs a newer version of Streamlit. Let's upgrade pip first, then install:
+
+```bash
+pip install --upgrade pip
+pip install streamlit
+```
+
+This will install the latest available Streamlit version (should be higher than 1.56.0).
+
+Then run:
+
+```bash
+streamlit run app
+
+---
