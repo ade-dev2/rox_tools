@@ -618,7 +618,7 @@ def render_sidebar():
                 (
                     "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
                     "white-space:nowrap; width:100%; display:block;'>"
-                    "Ragnarok X • Local Browser Storage</div>"
+                    "Bob The Builder</div>"
                 ),
                 unsafe_allow_html=True,
             )
