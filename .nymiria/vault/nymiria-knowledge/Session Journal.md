@@ -92,3 +92,27 @@ Discussed: > still not working. can you review and find the root cause?…; im n
 - configure authentication with your GitHub credentials. You can either:
 
 ---
+
+## May 11, 2026
+
+Discussed: yes please apply fix; Apply the fix based on your analysis already above, execute …; need your help disagosing an issue that codex 5.3 and minima…; we need it ti run on https://rox-priv-stats.streamlit.app; you have access to my streamlit. can you include redirect_ur…
+
+**Files touched:**
+- `src/rox_tools/ragnarok_x/.streamlit/secrets.toml`
+- `src/rox_tools/ragnarok_x/app.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `lib/python3.14/site-packages/streamlit/user_info.py`
+- `lib/python3.14/site-packages/streamlit/auth_util.py`
+- `app.py`
+- `build_store.py`
+- `SECRETS_SETUP.md`
+- `db.py`
+
+**Next steps:**
+- do to get rid of this? Google login is unavailable until OAuth credentials are p
+- store data, i just need there to have google auth so not everyone is dev@localho
+- auto-redeploy from this push in about 1–2 minutes.
+- configure authentication with your GitHub credentials. You can either:
+
+---
