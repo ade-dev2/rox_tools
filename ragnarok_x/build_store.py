@@ -623,6 +623,7 @@ def render_sidebar():
                 unsafe_allow_html=True,
             )
 
+        st.divider()
         st.sidebar.page_link("app.py", label="Home", icon="🏠")
         st.divider()
         st.sidebar.markdown("**🔧 Tools**")
