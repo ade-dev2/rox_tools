@@ -67,3 +67,28 @@ Discussed: (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % The gr…; (.ve
 - is filling in the OAuth credentials
 
 ---
+
+## May 11, 2026
+
+Discussed: > still not working. can you review and find the root cause?…; im not using mongoDB at all. are you hallucinating?; cna you review the above issues again?; yes please apply fix; Apply the fix based on your analysis already above, execute …
+
+**Files touched:**
+- `src/rox_tools/ragnarok_x/.streamlit/secrets.toml`
+- `src/rox_tools/ragnarok_x/app.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `lib/python3.14/site-packages/streamlit/user_info.py`
+- `lib/python3.14/site-packages/streamlit/auth_util.py`
+- `db.py`
+- `secrets.toml`
+- `build_store.py`
+- `app.py`
+
+**Next steps:**
+- work properly, and the `?login=google` link button will trigger the real Google
+- do to get rid of this? Google login is unavailable until OAuth credentials are p
+- store data, i just need there to have google auth so not everyone is dev@localho
+- auto-redeploy from this push in about 1–2 minutes.
+- configure authentication with your GitHub credentials. You can either:
+
+---
