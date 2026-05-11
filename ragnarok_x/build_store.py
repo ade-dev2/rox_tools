@@ -215,6 +215,27 @@ def _sanitize_canonical_name(name: str) -> str:
 # ---------------------------------------------------------------------------
 # Auth helpers
 # ---------------------------------------------------------------------------
+def _auth_configured() -> bool:
+    """Best-effort check for whether Streamlit auth secrets are configured."""
+    try:
+        auth = st.secrets.get("auth")
+        if auth and len(auth) > 0:
+            return True
+    except Exception:
+        pass
+    try:
+        # Fallback for alternate secret layouts.
+        return any(k in st.secrets for k in (
+            "provider",
+            "google_client_id",
+            "google_client_secret",
+            "github_client_id",
+            "github_client_secret",
+        ))
+    except Exception:
+        return False
+
+
 def _current_user_email() -> str | None:
     """
     Return the authenticated user's email, or None if not logged in.
@@ -222,7 +243,7 @@ def _current_user_email() -> str | None:
     Uses st.user (Streamlit 1.41+); is_logged_in is only present when
     auth is configured.
     """
-    if not st.secrets.get("auth"):
+    if not _auth_configured():
         return None
     try:
         if not st.user.is_logged_in:
@@ -660,16 +681,18 @@ def render_sidebar():
     """
     # ── Auth gate ─────────────────────────────────────────────────────────
     email = _current_user_email()
+    auth_ready = _auth_configured()
     if email is None:
         with st.sidebar:
-            if st.secrets.get("auth"):
+            if auth_ready:
                 if st.button("Log in with Google", key="sb_login", use_container_width=True):
                     st.login("google")
             else:
                 st.warning("Google auth is not configured in Streamlit secrets.")
         st.title("Privacy: Ragnarok X Tools")
-        if st.secrets.get("auth"):
-            st.button("Please log in with Google to access your builds.", key="main_login", use_container_width=True, on_click=lambda: st.login("google"))
+        if auth_ready:
+            if st.button("Please log in with Google to access your builds.", key="main_login", use_container_width=True, type="primary"):
+                st.login("google")
         else:
             st.info("Please log in to access your builds.")
         st.stop()
@@ -677,7 +700,7 @@ def render_sidebar():
     init_store()
     with st.sidebar:
         try:
-            display_email = st.user.get("email") if st.secrets.get("auth") else "Not signed in"
+            display_email = st.user.get("email") if auth_ready else "Not signed in"
         except Exception:
             display_email = email  # fall back to what _current_user_email() already resolved
 
@@ -708,7 +731,7 @@ def render_sidebar():
                 unsafe_allow_html=True,
             )
 
-        if st.secrets.get("auth") and st.button("Log out", key="sb_logout", use_container_width=True, type="tertiary"):
+        if auth_ready and st.button("Log out", key="sb_logout", use_container_width=True, type="tertiary"):
             st.session_state.pop("builds", None)
             st.logout()
 
