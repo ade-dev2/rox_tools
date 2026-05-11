@@ -19,7 +19,9 @@ from pymongo import MongoClient
 
 @st.cache_resource
 def _get_db():
-    client = MongoClient(st.secrets["MONGO_URI"], serverSelectionTimeoutMS=5000)
+    # Read from secrets.toml key "uri" under [mongodb], not "MONGO_URI".
+    uri = st.secrets.get("mongodb", {}).get("uri") or st.secrets.get("MONGO_URI", "")
+    client = MongoClient(uri, serverSelectionTimeoutMS=5000)
     return client["rox"]
 
 

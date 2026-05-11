@@ -13,8 +13,12 @@ Unified build schema stored in st.session_state["builds"]:
     }
 """
 
+from __future__ import annotations
+
 import sys
+import os
 from pathlib import Path
+from urllib.parse import urlencode
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -216,24 +220,42 @@ def _sanitize_canonical_name(name: str) -> str:
 # Auth helpers
 # ---------------------------------------------------------------------------
 def _auth_configured() -> bool:
-    """Best-effort check for whether Streamlit auth secrets are configured."""
+    """Return True only when a supported OAuth provider has credentials."""
+    provider = None
+    client_id = None
+    client_secret = None
     try:
         auth = st.secrets.get("auth")
-        if auth and len(auth) > 0:
-            return True
+        if auth:
+            provider = auth.get("provider")
+            if provider == "google":
+                client_id = auth.get("google_client_id")
+                client_secret = auth.get("google_client_secret")
+            elif provider == "github":
+                client_id = auth.get("github_client_id")
+                client_secret = auth.get("github_client_secret")
     except Exception:
         pass
+    provider = provider or os.getenv("STREAMLIT_AUTH_PROVIDER") or os.getenv("AUTH_PROVIDER") or "google"
+    if provider == "google":
+        client_id = client_id or os.getenv("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_AUTH_CLIENT_ID") or os.getenv("STREAMLIT_GOOGLE_CLIENT_ID")
+        client_secret = client_secret or os.getenv("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_AUTH_CLIENT_SECRET") or os.getenv("STREAMLIT_GOOGLE_CLIENT_SECRET")
+    elif provider == "github":
+        client_id = client_id or os.getenv("GITHUB_CLIENT_ID")
+        client_secret = client_secret or os.getenv("GITHUB_CLIENT_SECRET")
+    return bool(provider in {"google", "github"} and client_id and client_secret)
+
+
+def _login_url() -> str:
     try:
-        # Fallback for alternate secret layouts.
-        return any(k in st.secrets for k in (
-            "provider",
-            "google_client_id",
-            "google_client_secret",
-            "github_client_id",
-            "github_client_secret",
-        ))
+        base_url = st.context.url.split("?", 1)[0]
+        return f"{base_url}?{urlencode({'login': 'google'})}"
     except Exception:
-        return False
+        return "?login=google"
+
+
+def _local_secrets_hint() -> str:
+    return str(Path(__file__).resolve().parent / ".streamlit" / "secrets.toml")
 
 
 def _current_user_email() -> str | None:
@@ -683,18 +705,28 @@ def render_sidebar():
     email = _current_user_email()
     auth_ready = _auth_configured()
     if email is None:
+        login_url = _login_url()
+        try:
+            qv = st.query_params.get("login")
+            login_requested = (qv == "google") or (isinstance(qv, list) and "google" in qv)
+        except Exception:
+            login_requested = False
+        if auth_ready and login_requested:
+            st.login("google")
         with st.sidebar:
             if auth_ready:
                 if st.button("Log in with Google", key="sb_login", use_container_width=True):
                     st.login("google")
+                st.link_button("Open Google login link", login_url, use_container_width=True)
             else:
-                st.warning("Google auth is not configured in Streamlit secrets.")
+                st.warning("Google auth is not configured. Add OAuth credentials to Streamlit secrets.")
         st.title("Privacy: Ragnarok X Tools")
         if auth_ready:
             if st.button("Please log in with Google to access your builds.", key="main_login", use_container_width=True, type="primary"):
                 st.login("google")
+            st.link_button("Or open login URL", login_url, use_container_width=True)
         else:
-            st.info("Please log in to access your builds.")
+            st.info(f"Google login is unavailable until OAuth credentials are present in `{_local_secrets_hint()}` or Streamlit Cloud secrets.")
         st.stop()
 
     init_store()
