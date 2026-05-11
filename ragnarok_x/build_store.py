@@ -674,7 +674,34 @@ def render_sidebar():
             display_email = st.user.get("email") if st.secrets.get("auth") else "dev@localhost"
         except Exception:
             display_email = email  # fall back to what _current_user_email() already resolved
-        st.caption(f"👤 {display_email}")
+
+        avatar_candidates = [
+            Path(__file__).resolve().parent / "assets" / "person.png",
+            Path(__file__).resolve().parent / "assets" / "SCR 346.png",
+            Path(__file__).resolve().parent / "assets" / "scr 346.png",
+            Path(__file__).resolve().parent / "assets" / "SCR 343.png",
+        ]
+        avatar_path = next((p for p in avatar_candidates if p.exists()), None)
+
+        c1, c2 = st.columns([0.28, 1], gap="small")
+        with c1:
+            if avatar_path is not None:
+                st.image(str(avatar_path), width=28)
+            else:
+                st.markdown(
+                    "<div style='font-size:24px; line-height:28px;'>•</div>",
+                    unsafe_allow_html=True,
+                )
+        with c2:
+            st.markdown(
+                (
+                    "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
+                    "white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; display:block;'>"
+                    f"Ragnarok X Tools • {display_email}</div>"
+                ),
+                unsafe_allow_html=True,
+            )
+
         if st.secrets.get("auth") and st.button("Log out", key="sb_logout", use_container_width=True, type="tertiary"):
             st.session_state.pop("builds", None)
             st.logout()
@@ -951,9 +978,102 @@ export default function(component) {
 """
 
 
-@st.cache_resource
-def _get_stats_panel_component():
-    return _stcv2.component("stec_stats_panel", js=_STATS_PANEL_JS, isolate_styles=False)
+def _render_stats_panel_component(rows: list[dict]) -> None:
+    rows_json = json.dumps(rows)
+    html = f"""
+<script>
+(function() {{
+    const doc = window.parent.document;
+    const rows = {rows_json};
+
+    if (!window.parent._stec_state) {{
+        window.parent._stec_state = {{ closed: false, left: null, top: null }};
+    }}
+    const state = window.parent._stec_state;
+
+    function buildBody(rowList) {{
+        if (!rowList.length) return '<p style="color:#666;font-size:12px;margin:8px 10px">No stats modified yet.</p>';
+        const off = rowList.filter(r => r.section === 'off');
+        const def_ = rowList.filter(r => r.section === 'def');
+        let html = '';
+        function section(title, list, color) {{
+            if (!list.length) return '';
+            const trs = list.map(r =>
+                '<tr><td style="padding:2px 8px;font-size:12px;color:#b0b0b0;white-space:nowrap">' + r.label +
+                '</td><td style="padding:2px 8px;font-size:12px;font-weight:600;color:' + color + ';text-align:right">' + r.value +
+                '</td><td style="padding:2px 8px;font-size:11px;color:#666;text-align:right">' + r.delta + '</td></tr>'
+            ).join('');
+            return '<div style="padding:6px 8px 2px;font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.08em">' + title +
+                   '</div><table style="border-collapse:collapse;width:100%">' + trs + '</table>';
+        }}
+        html += section('Offensive', off, '#ff8a80');
+        html += section('Defensive', def_, '#80cbc4');
+        return html;
+    }}
+
+    let panel = doc.getElementById('stec-panel');
+    let tab = doc.getElementById('stec-tab');
+    if (!panel) {{
+        panel = doc.createElement('div');
+        panel.id = 'stec-panel';
+        panel.innerHTML =
+            '<div id="stec-hdr" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#1a2332;border-radius:8px 8px 0 0;cursor:move;user-select:none"><span style="font-size:13px;font-weight:600;color:#e0e0e0">📊 Stats Preview</span><button id="stec-close" style="background:none;border:none;color:#777;font-size:20px;line-height:1;cursor:pointer;padding:0 2px 2px">×</button></div>' +
+            '<div id="stec-body" style="overflow-y:auto;max-height:340px;padding:4px 0 6px"></div>';
+        Object.assign(panel.style, {{
+            position: 'fixed', width: '300px', background: '#0f1722', border: '1px solid #253348',
+            borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,.65)', zIndex: '9999', fontFamily: 'sans-serif'
+        }});
+        if (state.left !== null) {{ panel.style.left = state.left; panel.style.top = state.top; }}
+        else {{ panel.style.bottom = '24px'; panel.style.right = '24px'; }}
+        doc.body.appendChild(panel);
+
+        tab = doc.createElement('div');
+        tab.id = 'stec-tab';
+        tab.textContent = '📊 Stats';
+        Object.assign(tab.style, {{
+            position: 'fixed', top: '70px', right: '24px', background: '#1a2332', border: '1px solid #253348',
+            borderRadius: '8px', padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: '#e0e0e0',
+            cursor: 'pointer', zIndex: '9999', display: 'none', boxShadow: '0 2px 12px rgba(0,0,0,.5)'
+        }});
+        doc.body.appendChild(tab);
+
+        const hdr = doc.getElementById('stec-hdr');
+        let dragging = false, ox = 0, oy = 0;
+        hdr.addEventListener('mousedown', e => {{
+            dragging = true;
+            const r = panel.getBoundingClientRect();
+            ox = e.clientX - r.left; oy = e.clientY - r.top;
+            e.preventDefault();
+        }});
+        doc.addEventListener('mousemove', e => {{
+            if (!dragging) return;
+            panel.style.left = (e.clientX - ox) + 'px';
+            panel.style.top = (e.clientY - oy) + 'px';
+            panel.style.right = 'auto'; panel.style.bottom = 'auto';
+            state.left = panel.style.left; state.top = panel.style.top;
+        }});
+        doc.addEventListener('mouseup', () => {{ dragging = false; }});
+    }}
+
+    doc.getElementById('stec-close').onclick = e => {{
+        e.stopPropagation();
+        state.closed = true;
+        panel.style.display = 'none';
+        tab.style.display = 'block';
+    }};
+    tab.onclick = () => {{
+        state.closed = false;
+        panel.style.display = 'block';
+        tab.style.display = 'none';
+    }};
+
+    doc.getElementById('stec-body').innerHTML = buildBody(rows);
+    if (state.closed) {{ panel.style.display = 'none'; tab.style.display = 'block'; }}
+    else {{ panel.style.display = 'block'; tab.style.display = 'none'; }}
+}})();
+</script>
+"""
+    _stcv2.html(html, height=0, width=0)
 
 
 def render_stats_panel(
@@ -993,4 +1113,4 @@ def render_stats_panel(
                          "delta": ("+" if diff > 0 else "") + str(diff) if diff != 0 else "—",
                          "section": "def"})
 
-    _get_stats_panel_component()(data={"rows": rows})
+    _render_stats_panel_component(rows)

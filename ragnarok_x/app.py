@@ -5,12 +5,32 @@ from build_store import render_sidebar
 st.set_page_config(page_title="Ragnarok X Tools", layout="centered")
 render_sidebar()
 assets_dir = Path(__file__).parent / "assets"
+
+st.markdown(
+    """<style>
+    .home-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0.2rem 0 0.75rem;
+        font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+        line-height: 1.15;
+    }
+    [data-testid="stImage"] img {
+        object-fit: contain !important;
+        object-position: center top !important;
+    }
+    </style>""",
+    unsafe_allow_html=True,
+)
+
 logo_path = assets_dir / "logo.webp"
 if not logo_path.exists():
     logo_path = assets_dir / "logo.png"
 if logo_path.exists():
-    st.image(str(logo_path), width=180)
-st.title("Ragnarok X: Tools for Privacy Members")
+    st.image(str(logo_path), width=260)
+
+st.markdown('<h1 class="home-title">Ragnarok X: Tools for Privacy Members</h1>', unsafe_allow_html=True)
 st.markdown("""
 Use the sidebar to navigate between tools.
 
