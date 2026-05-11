@@ -24,6 +24,7 @@ import json
 import uuid
 import streamlit as st
 import streamlit.components.v1 as _stcv1
+from streamlit.errors import StreamlitAuthError
 
 from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
 
@@ -665,7 +666,13 @@ def render_sidebar():
     if email is None:
         with st.sidebar:
             if st.button("Log in with Google", key="sb_login", use_container_width=True):
-                st.login("google")
+                try:
+                    st.login("google")
+                except StreamlitAuthError:
+                    st.error(
+                        "Google login is not configured for this deployment. "
+                        "Set Streamlit auth credentials in app secrets."
+                    )
         st.title("Ragnarok X Tools")
         st.info("Please log in to access your builds.")
         st.stop()
