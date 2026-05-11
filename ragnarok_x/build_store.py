@@ -16,19 +16,15 @@ Unified build schema stored in st.session_state["builds"]:
 from __future__ import annotations
 
 import sys
-import os
 from pathlib import Path
-from urllib.parse import urlencode
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import hashlib
 import json
 import uuid
 import streamlit as st
 import streamlit.components.v1 as _stcv2
-
-from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
+from streamlit_local_storage import LocalStorage
 
 # ---------------------------------------------------------------------------
 # Security / validation constants
@@ -36,6 +32,7 @@ from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
 _MAX_NAME_LEN = 64   # characters
 _MAX_BUILDS   = 50   # per user
 _MAX_UUID_IMPORT = 50  # UUIDs accepted in a single import_builds_by_uuid call
+_LOCAL_STORAGE_ITEM_KEY = "rox_builds"
 
 from multiplier_stats import (
     PVEPlayerStats, PVETargetStats, pve_calculate_multiplier, pve_modifier_weights,
@@ -216,85 +213,28 @@ def _sanitize_canonical_name(name: str) -> str:
     return name or "Imported Build"
 
 
-# ---------------------------------------------------------------------------
-# Auth helpers
-# ---------------------------------------------------------------------------
-def _auth_configured() -> bool:
-    """Return True only when a supported OAuth provider has credentials."""
-    provider = None
-    client_id = None
-    client_secret = None
+def _local_storage() -> LocalStorage | None:
     try:
-        auth = st.secrets.get("auth")
-        if auth:
-            provider = auth.get("provider")
-            if provider == "google":
-                client_id = auth.get("google_client_id")
-                client_secret = auth.get("google_client_secret")
-            elif provider == "github":
-                client_id = auth.get("github_client_id")
-                client_secret = auth.get("github_client_secret")
-    except Exception:
-        pass
-    provider = provider or os.getenv("STREAMLIT_AUTH_PROVIDER") or os.getenv("AUTH_PROVIDER") or "google"
-    if provider == "google":
-        client_id = client_id or os.getenv("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_AUTH_CLIENT_ID") or os.getenv("STREAMLIT_GOOGLE_CLIENT_ID")
-        client_secret = client_secret or os.getenv("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_AUTH_CLIENT_SECRET") or os.getenv("STREAMLIT_GOOGLE_CLIENT_SECRET")
-    elif provider == "github":
-        client_id = client_id or os.getenv("GITHUB_CLIENT_ID")
-        client_secret = client_secret or os.getenv("GITHUB_CLIENT_SECRET")
-    return bool(provider in {"google", "github"} and client_id and client_secret)
-
-
-def _login_url() -> str:
-    try:
-        base_url = st.context.url.split("?", 1)[0]
-        return f"{base_url}?{urlencode({'login': 'google'})}"
-    except Exception:
-        return "?login=google"
-
-
-def _local_secrets_hint() -> str:
-    return str(Path(__file__).resolve().parent / ".streamlit" / "secrets.toml")
-
-
-def _current_user_email() -> str | None:
-    """
-    Return the authenticated user's email, or None if not logged in.
-    Auth must be configured via Streamlit secrets.
-    Uses st.user (Streamlit 1.41+); is_logged_in is only present when
-    auth is configured.
-    """
-    if not _auth_configured():
-        return None
-    try:
-        if not st.user.is_logged_in:
-            return None
-        return st.user.get("email")
+        if "_rox_local_storage" not in st.session_state:
+            st.session_state["_rox_local_storage"] = LocalStorage(key="rox_storage")
+        return st.session_state["_rox_local_storage"]
     except Exception:
         return None
 
 
-def _user_key() -> str | None:
-    """
-    Return a one-way SHA-256 hash of the user's email for use as the DB key.
-    The raw email is never stored in MongoDB — only this hash is used there.
-    The same email always produces the same hash, so lookups remain consistent.
-    """
-    email = _current_user_email()
-    if email is None:
-        return None
-    return hashlib.sha256(email.lower().encode()).hexdigest()
-
-
-def _sync_to_db() -> None:
-    """Write the current session builds to MongoDB. Silently toasts on failure."""
-    key = _user_key()
-    if key:
-        try:
-            save_builds_for_user(key, st.session_state["builds"])
-        except Exception as e:
-            st.toast(f"⚠️ DB sync failed: {e}")
+def _sync_to_local_storage() -> None:
+    storage = _local_storage()
+    if storage is None:
+        return
+    try:
+        st.session_state["_rox_ls_write_nonce"] = st.session_state.get("_rox_ls_write_nonce", 0) + 1
+        storage.setItem(
+            itemKey=_LOCAL_STORAGE_ITEM_KEY,
+            itemValue=st.session_state["builds"],
+            key=f"rox_set_builds_{st.session_state['_rox_ls_write_nonce']}",
+        )
+    except Exception as e:
+        st.toast(f"⚠️ Local save failed: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -303,24 +243,27 @@ def _sync_to_db() -> None:
 def init_store():
     """
     Initialise the builds store.
-    On the first call per session, ensures DB indexes exist then loads builds
-    from MongoDB for the logged-in user. Subsequent calls are no-ops.
+    On the first call per session, loads builds from browser local storage.
+    Subsequent calls are no-ops.
     """
     if "builds" in st.session_state:
         return
-    from db import ensure_indexes
-    try:
-        ensure_indexes()
-    except Exception:
-        pass
-    key = _user_key()
-    if key:
-        try:
-            st.session_state["builds"] = load_builds_for_user(key)
-        except Exception:
-            st.session_state["builds"] = {}
-    else:
+    storage = _local_storage()
+    if storage is None:
         st.session_state["builds"] = {}
+        return
+    raw = storage.getItem(_LOCAL_STORAGE_ITEM_KEY)
+    if isinstance(raw, dict):
+        st.session_state["builds"] = raw
+        return
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            st.session_state["builds"] = parsed if isinstance(parsed, dict) else {}
+            return
+        except Exception:
+            pass
+    st.session_state["builds"] = {}
 
 
 def get_builds() -> dict:
@@ -344,13 +287,13 @@ def save_build(name: str, offensive: dict, defensive: dict, weapon_meta: dict | 
     if weapon_meta is not None:
         entry["weapon_meta"] = dict(weapon_meta)
     st.session_state["builds"][name] = entry
-    _sync_to_db()
+    _sync_to_local_storage()
 
 
 def delete_build(name: str):
     init_store()
     st.session_state["builds"].pop(name, None)
-    _sync_to_db()
+    _sync_to_local_storage()
 
 
 def get_build_offensive(name: str) -> dict:
@@ -441,65 +384,15 @@ def import_builds_data(data: dict):
             n += 1
     else:
         return 0, "Unrecognised file format."
-    _sync_to_db()
+    _sync_to_local_storage()
     return n, None
 
 
 def import_builds_by_uuid(raw_input: str) -> tuple[int, list]:
     """
-    Parse one UUID per line from raw_input, fetch from the global builds
-    collection, and merge into session state.
-    Returns (n_imported, list_of_error_strings).
+    UUID import requires cloud DB and is disabled in local-only mode.
     """
-    init_store()
-    lines = [l.strip() for l in raw_input.splitlines() if l.strip()]
-    if len(lines) > _MAX_UUID_IMPORT:
-        return 0, [f"Too many UUIDs — limit is {_MAX_UUID_IMPORT} per import."]
-    errors: list = []
-    valid_ids: list = []
-    for line in lines:
-        try:
-            uuid.UUID(line)
-            valid_ids.append(line)
-        except ValueError:
-            errors.append(f"Invalid UUID: {line!r}")
-
-    if not valid_ids:
-        return 0, errors or ["No UUIDs entered."]
-
-    fetched = fetch_builds_by_ids(valid_ids)
-    for bid in valid_ids:
-        if bid not in fetched:
-            errors.append(f"Build not found: {bid}")
-
-    n = 0
-    existing_names = set(st.session_state["builds"])
-    for bid, doc in fetched.items():
-        if len(st.session_state["builds"]) >= _MAX_BUILDS:
-            errors.append(f"Build limit ({_MAX_BUILDS}) reached — import stopped.")
-            break
-        base = _sanitize_canonical_name(doc.get("canonical_name", bid[:8]))
-        name, i = base, 2
-        while name in existing_names:
-            name = f"{base} ({i})"
-            i += 1
-        off = doc.get("offensive", {})
-        defn = doc.get("defensive", {})
-        # Assign a NEW build_id so the importing user gets an independent copy
-        # in the DB. Storing the original shared UUID would cause saves by this
-        # user to overwrite the donor's document (and vice-versa).
-        st.session_state["builds"][name] = {
-            "build_id":    str(uuid.uuid4()),
-            "offensive":   {f: off.get(f, default)  for f, (_, default) in OFFENSIVE_FIELDS.items()},
-            "defensive":   {f: defn.get(f, default) for f, (_, default) in DEFENSIVE_FIELDS.items()},
-            "weapon_meta": _sanitize_weapon_meta(doc.get("weapon_meta", _wm_defaults())),
-        }
-        existing_names.add(name)
-        n += 1
-
-    if n:
-        _sync_to_db()
-    return n, errors
+    return 0, ["Build ID import is disabled in local-only mode."]
 
 
 # ---------------------------------------------------------------------------
@@ -699,43 +592,10 @@ def get_weights(mode: str, off_raw: dict, def_raw: dict,
 def render_sidebar():
     """
     Render the shared build manager in the sidebar.
-    Pages call this once; it handles auth gate, upload / export / list.
+    Pages call this once; it handles upload / export / list.
     """
-    # ── Auth gate ─────────────────────────────────────────────────────────
-    email = _current_user_email()
-    auth_ready = _auth_configured()
-    if email is None:
-        login_url = _login_url()
-        try:
-            qv = st.query_params.get("login")
-            login_requested = (qv == "google") or (isinstance(qv, list) and "google" in qv)
-        except Exception:
-            login_requested = False
-        if auth_ready and login_requested:
-            st.login("google")
-        with st.sidebar:
-            if auth_ready:
-                if st.button("Log in with Google", key="sb_login", use_container_width=True):
-                    st.login("google")
-                st.link_button("Open Google login link", login_url, use_container_width=True)
-            else:
-                st.warning("Google auth is not configured. Add OAuth credentials to Streamlit secrets.")
-        st.title("Privacy: Ragnarok X Tools")
-        if auth_ready:
-            if st.button("Please log in with Google to access your builds.", key="main_login", use_container_width=True, type="primary"):
-                st.login("google")
-            st.link_button("Or open login URL", login_url, use_container_width=True)
-        else:
-            st.info(f"Google login is unavailable until OAuth credentials are present in `{_local_secrets_hint()}` or Streamlit Cloud secrets.")
-        st.stop()
-
     init_store()
     with st.sidebar:
-        try:
-            display_email = st.user.get("email") if auth_ready else "Not signed in"
-        except Exception:
-            display_email = email  # fall back to what _current_user_email() already resolved
-
         avatar_candidates = [
             Path(__file__).resolve().parent / "assets" / "person.png",
             Path(__file__).resolve().parent / "assets" / "SCR 346.png",
@@ -758,14 +618,10 @@ def render_sidebar():
                 (
                     "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
                     "white-space:nowrap; width:100%; display:block;'>"
-                    f"Ragnarok X • {display_email}</div>"
+                    "Ragnarok X • Local Browser Storage</div>"
                 ),
                 unsafe_allow_html=True,
             )
-
-        if auth_ready and st.button("Log out", key="sb_logout", use_container_width=True, type="tertiary"):
-            st.session_state.pop("builds", None)
-            st.logout()
 
         st.sidebar.page_link("app.py", label="Home", icon="🏠")
         st.divider()

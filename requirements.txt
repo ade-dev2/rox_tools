@@ -1,7 +1,7 @@
-authlib==1.6.9
 python-dotenv==1.1.0
 sympy
 streamlit==1.50.0
+streamlit-local-storage==0.0.25
 plotly
 pandas
 pymongo[srv]>=4.6
