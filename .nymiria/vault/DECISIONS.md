@@ -19,12 +19,3 @@ auto-detected from response
 auto-detected from response
 
 ---
-
-## test the import:
-
-**Date:** May 10, 2026
-**Provider:** auto-extract
-
-auto-detected from response
-
----

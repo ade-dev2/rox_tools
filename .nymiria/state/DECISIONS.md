@@ -36,3 +36,13 @@ Then run:
 streamlit run app
 
 ---
+## 2026-05-11 — test the import:
+**Provider:** minimax
+**Rationale:** (auto-detected)
+**Source:** The file **is now updated** — it shows `v1`. Now let's test the import:
+
+```bash
+cd /Users/lindsaylynn/Developer/rox/rox_tools/ragnarok_x && python -c "from build_store import render_stats_panel; print('✅ Import successful!')"
+```
+
+---
