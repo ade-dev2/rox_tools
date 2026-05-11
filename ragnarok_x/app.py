@@ -10,7 +10,7 @@ if not logo_path.exists():
     logo_path = assets_dir / "logo.png"
 if logo_path.exists():
     st.image(str(logo_path), width=180)
-st.title("Ragnarok X: Next Generation Tools")
+st.title("Ragnarok X: Tools for Privacy Members")
 st.markdown("""
 Use the sidebar to navigate between tools.
 
