@@ -35,3 +35,35 @@ Discussed: first can you review this codebase and let me know if you ca…; lind
 - change from v2 ‚Üí v1. Let me patch the file:
 
 ---
+
+## May 10, 2026
+
+Discussed: (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % The gr…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % unzip …; this is the streamlit we tried forking/copying - is it of va…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % find /…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % ls -la…
+
+**Decisions:**
+- test the import:
+
+**Files touched:**
+- `components/__init__.py`
+- `components/lib/__init__.py`
+- `components/lib/local_component_registry.py`
+- `components/types/__init__.py`
+- `components/types/base_component_registry.py`
+- `components/types/base_custom_component.py`
+- `components/v1/__init__.py`
+- `components/v1/component_arrow.py`
+- `components/v1/component_registry.py`
+- `components/v1/components.py`
+
+**Next steps:**
+- research it? https://roxtools-mxekztt3ydhzvjoarhkqit.streamlit.app/DMG_Multiplie
+- change from `v2` → `v1`. Let me patch the file:
+- change from v2 ‚Üí v1. Let me patch the file:
+- activate the venv first:
+- preserve them.
+- redeploy in ~1-2 minutes. Refresh the app and the logo + auth setup will appear.
+- appear after Streamlit redeploys (~1-2 min).
+- we remove /Users/lindsaylynn/Developer/rox/rox_tools if it’s not in use anywhere
+- is filling in the OAuth credentials
+
+---

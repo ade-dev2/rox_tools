@@ -6,3 +6,10 @@
 **Decisions:** upgrade pip first, then install:, test the import:
 
 ---
+## 2026-05-11T03:12:23.484Z — claude
+**Summary:** Discussed: (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % The gr…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % unzip …; this is the streamlit we tried forking/copying - is it of va…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % find /…; (.venv) lindsaylynn@Lindsays-MacBook-Air ragnarok_x % ls -la…
+**Duration:** 39 min
+**Files Changed:** components/__init__.py, components/lib/__init__.py, components/lib/local_component_registry.py, components/types/__init__.py, components/types/base_component_registry.py, components/types/base_custom_component.py, components/v1/__init__.py, components/v1/component_arrow.py, components/v1/component_registry.py, components/v1/components.py, components/v1/custom_component.py, lib/python3.9, lib/python3.9/site-packages/streamlit/elements/lib/streamlit_plotly_theme.py, lib/python3.9/site-packages/streamlit/hello/streamlit_app.py, lib/python3.9/site-packages/streamlit/external/langchain/streamlit_callback_handler.py
+**Decisions:** test the import:
+
+---
