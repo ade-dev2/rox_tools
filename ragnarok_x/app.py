@@ -4,7 +4,10 @@ from build_store import render_sidebar
 
 st.set_page_config(page_title="Ragnarok X Tools", layout="centered")
 render_sidebar()
-logo_path = Path(__file__).parent / "assets" / "logo.png"
+assets_dir = Path(__file__).parent / "assets"
+logo_path = assets_dir / "logo.webp"
+if not logo_path.exists():
+    logo_path = assets_dir / "logo.png"
 if logo_path.exists():
     st.image(str(logo_path), width=180)
 st.title("Ragnarok X: Next Generation Tools")

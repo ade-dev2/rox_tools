@@ -669,13 +669,6 @@ def render_sidebar():
         st.stop()
 
     init_store()
-    if not st.secrets.get("auth"):
-        st.warning(
-            "⚠️ **Dev bypass active** — no `[auth]` section found in secrets. "
-            "All users share the same `dev@localhost` account. "
-            "Configure `[auth]` in `.streamlit/secrets.toml` before deploying.",
-            icon="🔓",
-        )
     with st.sidebar:
         try:
             display_email = st.user.get("email") if st.secrets.get("auth") else "dev@localhost"
