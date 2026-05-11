@@ -21,7 +21,7 @@ import hashlib
 import json
 import uuid
 import streamlit as st
-import streamlit.components.v2 as _stcv2
+import streamlit.components.v1 as _stcv2
 
 from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
 
