@@ -8,8 +8,9 @@ Look up enchant stat values and quality probabilities from enchants_db.json.
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import json
 from pathlib import Path

@@ -7,8 +7,9 @@ used by the DMG Multiplier.
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 from data.gear_db import GEAR_DB

@@ -6,8 +6,9 @@ across one or more target builds.
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collections import Counter
 from itertools import combinations_with_replacement

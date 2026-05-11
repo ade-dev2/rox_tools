@@ -15,8 +15,9 @@ Item structure per entry:
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 from data import gear_db as _gear_db_module

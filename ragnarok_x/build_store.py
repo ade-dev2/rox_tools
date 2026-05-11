@@ -667,8 +667,11 @@ def render_sidebar():
                     st.login("google")
             else:
                 st.warning("Google auth is not configured in Streamlit secrets.")
-        st.title("Ragnarok X Tools")
-        st.info("Please log in to access your builds.")
+        st.title("Privacy: Ragnarok X Tools")
+        if st.secrets.get("auth"):
+            st.button("Please log in with Google to access your builds.", key="main_login", use_container_width=True, on_click=lambda: st.login("google"))
+        else:
+            st.info("Please log in to access your builds.")
         st.stop()
 
     init_store()

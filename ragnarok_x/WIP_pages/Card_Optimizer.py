@@ -7,8 +7,9 @@ enter base/target stats, and the optimizer finds the best assignment.
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collections import Counter
 import streamlit as st

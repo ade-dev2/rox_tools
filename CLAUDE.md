@@ -25,15 +25,13 @@ pip install -r requirements.txt
 ## Running the App
 
 ```bash
-cd ragnarok_x
 streamlit run app.py
 ```
 
 ## Running Tests
 
 ```bash
-cd ragnarok_x
-python -m pytest stat_calculation/test/
+python -m pytest ragnarok_x/stat_calculation/test/
 ```
 
 ## Architecture

@@ -2,7 +2,7 @@ import streamlit as st
 from pathlib import Path
 from build_store import render_sidebar
 
-st.set_page_config(page_title="Ragnarok X Tools", layout="centered")
+st.set_page_config(page_title="Privacy: Ragnarok X Tools", layout="centered")
 render_sidebar()
 assets_dir = Path(__file__).parent / "assets"
 
@@ -29,7 +29,7 @@ if not logo_path.exists():
 if logo_path.exists():
     st.image(str(logo_path), width=260)
 
-st.markdown('<h1 class="home-title">Ragnarok X: Tools for Privacy Members</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="home-title">Privacy: Ragnarok X Tools</h1>', unsafe_allow_html=True)
 st.markdown("""
 Use the sidebar to navigate between tools.
 

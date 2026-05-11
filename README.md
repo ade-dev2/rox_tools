@@ -11,8 +11,7 @@ source .venv/Scripts/activate   # Windows Git Bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch
-cd ragnarok_x
+# Launch from /rox_tools
 streamlit run app.py
 ```
 

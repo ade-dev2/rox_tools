@@ -6,8 +6,9 @@ The selected enchants are interpreted into build stats and saved as a standard b
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 from build_store import (
