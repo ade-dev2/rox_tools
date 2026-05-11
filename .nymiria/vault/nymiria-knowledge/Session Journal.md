@@ -116,3 +116,29 @@ Discussed: yes please apply fix; Apply the fix based on your analysis already ab
 - configure authentication with your GitHub credentials. You can either:
 
 ---
+
+## May 11, 2026
+
+Discussed: you have access to my streamlit. can you include redirect_ur…; i get these errors now - what do you or I need to do to get …; you have access to streamlit to add this. can you do it? we …; whats the Streamlit Cloud → app → Settings url; can you give me what to paste here?
+
+**Files touched:**
+- `src/rox_tools/ragnarok_x/.streamlit/secrets.toml`
+- `src/rox_tools/ragnarok_x/app.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `lib/python3.14/site-packages/streamlit/user_info.py`
+- `lib/python3.14/site-packages/streamlit/auth_util.py`
+- `pages/01_Home.py`
+- `pages/03_Home.py`
+- `pages/02_Tools.py`
+- `pages/04_Tools.py`
+
+**Next steps:**
+- do to get rid of this? Google login is unavailable until OAuth credentials are p
+- store data, i just need there to have google auth so not everyone is dev@localho
+- auto-redeploy from this push in about 1–2 minutes.
+- configure authentication with your GitHub credentials. You can either:
+- renumber the files:
+- refresh automatically.
+
+---

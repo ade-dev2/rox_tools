@@ -32,7 +32,7 @@ Each user authenticates with their own account, so builds are stored separately 
 3. Application type: **Web application**, name it
 4. Under **Authorized redirect URIs** add:
    ```
-   https://rox-priv-stats.streamlit.app/oauth2callback
+   https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback
    ```
 5. Click **Create**
 6. Copy the **Client ID** and **Client Secret**
@@ -45,13 +45,13 @@ Each user authenticates with their own account, so builds are stored separately 
 
 ```toml
 [auth]
-provider             = "google"
-google_client_id     = "YOUR_CLIENT_ID.apps.googleusercontent.com"
-google_client_secret = "YOUR_CLIENT_SECRET"
-redirect_uri         = "https://rox-priv-stats.streamlit.app/oauth2callback"
-cookie_secret        = "CHANGE_ME_TO_A_RANDOM_LONG_STRING"
-enable_viewer_invites = true
-allow_password_login  = false
+redirect_uri = "https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback"
+cookie_secret = "CHANGE_ME_TO_A_RANDOM_LONG_STRING"
+
+[[auth.providers]]
+name = "google"
+client_id = "YOUR_CLIENT_ID.apps.googleusercontent.com"
+client_secret = "YOUR_CLIENT_SECRET"
 ```
 
 4. **Save**
@@ -77,8 +77,8 @@ allow_password_login  = false
 1. Go to [github.com/settings/developers](https://github.com/settings/developers)
 2. **New OAuth App**
 3. Fill in:
-   - Homepage URL: `https://rox-priv-stats.streamlit.app`
-   - Authorization callback URL: `https://rox-priv-stats.streamlit.app/oauth2callback`
+   - Homepage URL: `https://<your-current-streamlit-subdomain>.streamlit.app`
+   - Authorization callback URL: `https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback`
 4. **Register application**
 5. Copy **Client ID** → generate a new **Client Secret** → copy it
 
@@ -86,9 +86,13 @@ allow_password_login  = false
 
 ```toml
 [auth]
-provider             = "github"
-github_client_id     = "YOUR_CLIENT_ID"
-github_client_secret = "YOUR_CLIENT_SECRET"
+redirect_uri = "https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback"
+cookie_secret = "CHANGE_ME_TO_A_RANDOM_LONG_STRING"
+
+[[auth.providers]]
+name = "github"
+client_id = "YOUR_CLIENT_ID"
+client_secret = "YOUR_CLIENT_SECRET"
 ```
 
 ---
@@ -101,7 +105,7 @@ github_client_secret = "YOUR_CLIENT_SECRET"
 | **.gitignore** | Make sure `secrets.toml` is gitignored — never commit real credentials |
 | **Existing dev data** | After enabling auth, all `dev@localhost` build data is orphaned. Users start fresh. |
 | **Publishing** | Until you publish the OAuth app in Google Cloud, only test users can log in |
-| **Viewer invites** | `enable_viewer_invites = true` lets you add specific email addresses in Streamlit Cloud Sharing settings |
+| **Redirect URI** | Must match your current Streamlit public URL exactly, including `/oauth2callback` |
 
 ---
 
@@ -111,7 +115,7 @@ github_client_secret = "YOUR_CLIENT_SECRET"
 |---|---|
 | `⚠️ Dev bypass active` still shows | Make sure `[auth]` is not commented out — no `#` before it |
 | `Log in with Google` not shown | Reload the app after saving secrets |
-| "Invalid client" after deploy | Verify redirect URI is exactly `https://rox-priv-stats.streamlit.app/oauth2callback` |
+| "Invalid client" after deploy | Verify redirect URI exactly matches your current app URL plus `/oauth2callback` |
 | Can't log in at all | Confirm your email is a test user in Google Cloud OAuth consent screen |
 | `st.user.get` errors | Requires Streamlit ≥ 1.41 and a real `[auth]` section in secrets |
 

@@ -16,17 +16,15 @@ Unified build schema stored in st.session_state["builds"]:
 from __future__ import annotations
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
+from pathlib import Path
 
-import hashlib
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import json
 import uuid
 import streamlit as st
-import streamlit.components.v1 as _stcv1
-from streamlit.errors import StreamlitAuthError
-
-from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
+import streamlit.components.v1 as _stcv2
+from streamlit_local_storage import LocalStorage
 
 # ---------------------------------------------------------------------------
 # Security / validation constants
@@ -34,6 +32,7 @@ from db import load_builds_for_user, save_builds_for_user, fetch_builds_by_ids
 _MAX_NAME_LEN = 64   # characters
 _MAX_BUILDS   = 50   # per user
 _MAX_UUID_IMPORT = 50  # UUIDs accepted in a single import_builds_by_uuid call
+_LOCAL_STORAGE_ITEM_KEY = "rox_builds"
 
 from multiplier_stats import (
     PVEPlayerStats, PVETargetStats, pve_calculate_multiplier, pve_modifier_weights,
@@ -214,47 +213,28 @@ def _sanitize_canonical_name(name: str) -> str:
     return name or "Imported Build"
 
 
-# ---------------------------------------------------------------------------
-# Auth helpers
-# ---------------------------------------------------------------------------
-def _current_user_email() -> str | None:
-    """
-    Return the authenticated user's email, or None if not logged in.
-    Local dev bypass: if no [auth] section exists in secrets, returns
-    'dev@localhost' so the DB path works without real OAuth.
-    Uses st.user (Streamlit 1.41+); is_logged_in is only present when
-    auth is configured.
-    """
-    if not st.secrets.get("auth"):
-        return "dev@localhost"
+def _local_storage() -> LocalStorage | None:
     try:
-        if not st.user.is_logged_in:
-            return None
-        return st.user.get("email")
+        if "_rox_local_storage" not in st.session_state:
+            st.session_state["_rox_local_storage"] = LocalStorage(key="rox_storage")
+        return st.session_state["_rox_local_storage"]
     except Exception:
         return None
 
 
-def _user_key() -> str | None:
-    """
-    Return a one-way SHA-256 hash of the user's email for use as the DB key.
-    The raw email is never stored in MongoDB — only this hash is used there.
-    The same email always produces the same hash, so lookups remain consistent.
-    """
-    email = _current_user_email()
-    if email is None:
-        return None
-    return hashlib.sha256(email.lower().encode()).hexdigest()
-
-
-def _sync_to_db() -> None:
-    """Write the current session builds to MongoDB. Silently toasts on failure."""
-    key = _user_key()
-    if key:
-        try:
-            save_builds_for_user(key, st.session_state["builds"])
-        except Exception as e:
-            st.toast(f"⚠️ DB sync failed: {e}")
+def _sync_to_local_storage() -> None:
+    storage = _local_storage()
+    if storage is None:
+        return
+    try:
+        st.session_state["_rox_ls_write_nonce"] = st.session_state.get("_rox_ls_write_nonce", 0) + 1
+        storage.setItem(
+            itemKey=_LOCAL_STORAGE_ITEM_KEY,
+            itemValue=st.session_state["builds"],
+            key=f"rox_set_builds_{st.session_state['_rox_ls_write_nonce']}",
+        )
+    except Exception as e:
+        st.toast(f"⚠️ Local save failed: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -263,24 +243,27 @@ def _sync_to_db() -> None:
 def init_store():
     """
     Initialise the builds store.
-    On the first call per session, ensures DB indexes exist then loads builds
-    from MongoDB for the logged-in user. Subsequent calls are no-ops.
+    On the first call per session, loads builds from browser local storage.
+    Subsequent calls are no-ops.
     """
     if "builds" in st.session_state:
         return
-    from db import ensure_indexes
-    try:
-        ensure_indexes()
-    except Exception:
-        pass
-    key = _user_key()
-    if key:
-        try:
-            st.session_state["builds"] = load_builds_for_user(key)
-        except Exception:
-            st.session_state["builds"] = {}
-    else:
+    storage = _local_storage()
+    if storage is None:
         st.session_state["builds"] = {}
+        return
+    raw = storage.getItem(_LOCAL_STORAGE_ITEM_KEY)
+    if isinstance(raw, dict):
+        st.session_state["builds"] = raw
+        return
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            st.session_state["builds"] = parsed if isinstance(parsed, dict) else {}
+            return
+        except Exception:
+            pass
+    st.session_state["builds"] = {}
 
 
 def get_builds() -> dict:
@@ -304,13 +287,13 @@ def save_build(name: str, offensive: dict, defensive: dict, weapon_meta: dict | 
     if weapon_meta is not None:
         entry["weapon_meta"] = dict(weapon_meta)
     st.session_state["builds"][name] = entry
-    _sync_to_db()
+    _sync_to_local_storage()
 
 
 def delete_build(name: str):
     init_store()
     st.session_state["builds"].pop(name, None)
-    _sync_to_db()
+    _sync_to_local_storage()
 
 
 def get_build_offensive(name: str) -> dict:
@@ -401,65 +384,15 @@ def import_builds_data(data: dict):
             n += 1
     else:
         return 0, "Unrecognised file format."
-    _sync_to_db()
+    _sync_to_local_storage()
     return n, None
 
 
 def import_builds_by_uuid(raw_input: str) -> tuple[int, list]:
     """
-    Parse one UUID per line from raw_input, fetch from the global builds
-    collection, and merge into session state.
-    Returns (n_imported, list_of_error_strings).
+    UUID import requires cloud DB and is disabled in local-only mode.
     """
-    init_store()
-    lines = [l.strip() for l in raw_input.splitlines() if l.strip()]
-    if len(lines) > _MAX_UUID_IMPORT:
-        return 0, [f"Too many UUIDs — limit is {_MAX_UUID_IMPORT} per import."]
-    errors: list = []
-    valid_ids: list = []
-    for line in lines:
-        try:
-            uuid.UUID(line)
-            valid_ids.append(line)
-        except ValueError:
-            errors.append(f"Invalid UUID: {line!r}")
-
-    if not valid_ids:
-        return 0, errors or ["No UUIDs entered."]
-
-    fetched = fetch_builds_by_ids(valid_ids)
-    for bid in valid_ids:
-        if bid not in fetched:
-            errors.append(f"Build not found: {bid}")
-
-    n = 0
-    existing_names = set(st.session_state["builds"])
-    for bid, doc in fetched.items():
-        if len(st.session_state["builds"]) >= _MAX_BUILDS:
-            errors.append(f"Build limit ({_MAX_BUILDS}) reached — import stopped.")
-            break
-        base = _sanitize_canonical_name(doc.get("canonical_name", bid[:8]))
-        name, i = base, 2
-        while name in existing_names:
-            name = f"{base} ({i})"
-            i += 1
-        off = doc.get("offensive", {})
-        defn = doc.get("defensive", {})
-        # Assign a NEW build_id so the importing user gets an independent copy
-        # in the DB. Storing the original shared UUID would cause saves by this
-        # user to overwrite the donor's document (and vice-versa).
-        st.session_state["builds"][name] = {
-            "build_id":    str(uuid.uuid4()),
-            "offensive":   {f: off.get(f, default)  for f, (_, default) in OFFENSIVE_FIELDS.items()},
-            "defensive":   {f: defn.get(f, default) for f, (_, default) in DEFENSIVE_FIELDS.items()},
-            "weapon_meta": _sanitize_weapon_meta(doc.get("weapon_meta", _wm_defaults())),
-        }
-        existing_names.add(name)
-        n += 1
-
-    if n:
-        _sync_to_db()
-    return n, errors
+    return 0, ["Build ID import is disabled in local-only mode."]
 
 
 # ---------------------------------------------------------------------------
@@ -659,38 +592,17 @@ def get_weights(mode: str, off_raw: dict, def_raw: dict,
 def render_sidebar():
     """
     Render the shared build manager in the sidebar.
-    Pages call this once; it handles auth gate, upload / export / list.
+    Pages call this once; it handles upload / export / list.
     """
-    # ── Auth gate ─────────────────────────────────────────────────────────
-    email = _current_user_email()
-    if email is None:
-        with st.sidebar:
-            if st.button("Log in with Google", key="sb_login", use_container_width=True):
-                try:
-                    st.login("google")
-                except StreamlitAuthError as exc:
-                    redirect_uri = (
-                        st.secrets.get("auth", {}).get("redirect_uri")
-                        or "https://<your-app>.streamlit.app/oauth2callback"
-                    )
-                    snippet = (
-                        "[auth]\\n"
-                        f"redirect_uri = \\\"{redirect_uri}\\\"\\n"
-                        "cookie_secret = \\\"<random-32+ chars>\\\"\\n\\n"
-                        "[[auth.providers]]\\n"
-                        "name = \\\"google\\\"\\n"
-                        "client_id = \\\"<google-client-id>\\\"\\n"
-                        "client_secret = \\\"<google-client-secret>\\\""
-                    )
-                    st.error(
-                        "Google login is not configured for this deployment. "
-                        "Set Streamlit auth credentials in app secrets."
-                    )
-                    st.caption(f"Details: {exc}")
-                    st.code(snippet, language="toml")
-        st.title("Ragnarok X Tools")
-        st.info("Please log in to access your builds.")
-        st.stop()
+    init_store()
+    with st.sidebar:
+        avatar_candidates = [
+            Path(__file__).resolve().parent / "assets" / "person.png",
+            Path(__file__).resolve().parent / "assets" / "SCR 346.png",
+            Path(__file__).resolve().parent / "assets" / "scr 346.png",
+            Path(__file__).resolve().parent / "assets" / "SCR 343.png",
+        ]
+        avatar_path = next((p for p in avatar_candidates if p.exists()), None)
 
         c1, c2 = st.columns([0.28, 1], gap="small")
         with c1:
@@ -706,12 +618,11 @@ def render_sidebar():
                 (
                     "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
                     "white-space:nowrap; width:100%; display:block;'>"
-                    "Bob The Builder</div>"
+                    "Ragnarok X • Local Browser Storage</div>"
                 ),
                 unsafe_allow_html=True,
             )
 
-        st.divider()
         st.sidebar.page_link("app.py", label="Home", icon="🏠")
         st.divider()
         st.sidebar.markdown("**🔧 Tools**")
@@ -850,7 +761,6 @@ def render_sidebar():
                 }})();
                 </script>""",
                 height=0,
-                key="bs_clipboard_bridge",
             )
             if _copy_val:
                 if _is_all:
@@ -865,8 +775,10 @@ def render_sidebar():
 # Floating stats panel (shared by Build Creator pages)
 # ---------------------------------------------------------------------------
 _STATS_PANEL_JS = """
-(function(rows) {
+export default function(component) {
     const doc  = document;
+    const rows = (component.data && Array.isArray(component.data.rows))
+                 ? component.data.rows : [];
 
     if (!window._stec_state) {
         window._stec_state = { closed: false, left: null, top: null };
@@ -979,13 +891,106 @@ _STATS_PANEL_JS = """
         if (p) p.remove();
         if (t) t.remove();
     };
-})
+}
 """
 
 
-@st.cache_resource
-def _get_stats_panel_component():
-    return _STATS_PANEL_JS
+def _render_stats_panel_component(rows: list[dict]) -> None:
+    rows_json = json.dumps(rows)
+    html = f"""
+<script>
+(function() {{
+    const doc = window.parent.document;
+    const rows = {rows_json};
+
+    if (!window.parent._stec_state) {{
+        window.parent._stec_state = {{ closed: false, left: null, top: null }};
+    }}
+    const state = window.parent._stec_state;
+
+    function buildBody(rowList) {{
+        if (!rowList.length) return '<p style="color:#666;font-size:12px;margin:8px 10px">No stats modified yet.</p>';
+        const off = rowList.filter(r => r.section === 'off');
+        const def_ = rowList.filter(r => r.section === 'def');
+        let html = '';
+        function section(title, list, color) {{
+            if (!list.length) return '';
+            const trs = list.map(r =>
+                '<tr><td style="padding:2px 8px;font-size:12px;color:#b0b0b0;white-space:nowrap">' + r.label +
+                '</td><td style="padding:2px 8px;font-size:12px;font-weight:600;color:' + color + ';text-align:right">' + r.value +
+                '</td><td style="padding:2px 8px;font-size:11px;color:#666;text-align:right">' + r.delta + '</td></tr>'
+            ).join('');
+            return '<div style="padding:6px 8px 2px;font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.08em">' + title +
+                   '</div><table style="border-collapse:collapse;width:100%">' + trs + '</table>';
+        }}
+        html += section('Offensive', off, '#ff8a80');
+        html += section('Defensive', def_, '#80cbc4');
+        return html;
+    }}
+
+    let panel = doc.getElementById('stec-panel');
+    let tab = doc.getElementById('stec-tab');
+    if (!panel) {{
+        panel = doc.createElement('div');
+        panel.id = 'stec-panel';
+        panel.innerHTML =
+            '<div id="stec-hdr" style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#1a2332;border-radius:8px 8px 0 0;cursor:move;user-select:none"><span style="font-size:13px;font-weight:600;color:#e0e0e0">📊 Stats Preview</span><button id="stec-close" style="background:none;border:none;color:#777;font-size:20px;line-height:1;cursor:pointer;padding:0 2px 2px">×</button></div>' +
+            '<div id="stec-body" style="overflow-y:auto;max-height:340px;padding:4px 0 6px"></div>';
+        Object.assign(panel.style, {{
+            position: 'fixed', width: '300px', background: '#0f1722', border: '1px solid #253348',
+            borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,.65)', zIndex: '9999', fontFamily: 'sans-serif'
+        }});
+        if (state.left !== null) {{ panel.style.left = state.left; panel.style.top = state.top; }}
+        else {{ panel.style.bottom = '24px'; panel.style.right = '24px'; }}
+        doc.body.appendChild(panel);
+
+        tab = doc.createElement('div');
+        tab.id = 'stec-tab';
+        tab.textContent = '📊 Stats';
+        Object.assign(tab.style, {{
+            position: 'fixed', top: '70px', right: '24px', background: '#1a2332', border: '1px solid #253348',
+            borderRadius: '8px', padding: '6px 14px', fontSize: '13px', fontWeight: '600', color: '#e0e0e0',
+            cursor: 'pointer', zIndex: '9999', display: 'none', boxShadow: '0 2px 12px rgba(0,0,0,.5)'
+        }});
+        doc.body.appendChild(tab);
+
+        const hdr = doc.getElementById('stec-hdr');
+        let dragging = false, ox = 0, oy = 0;
+        hdr.addEventListener('mousedown', e => {{
+            dragging = true;
+            const r = panel.getBoundingClientRect();
+            ox = e.clientX - r.left; oy = e.clientY - r.top;
+            e.preventDefault();
+        }});
+        doc.addEventListener('mousemove', e => {{
+            if (!dragging) return;
+            panel.style.left = (e.clientX - ox) + 'px';
+            panel.style.top = (e.clientY - oy) + 'px';
+            panel.style.right = 'auto'; panel.style.bottom = 'auto';
+            state.left = panel.style.left; state.top = panel.style.top;
+        }});
+        doc.addEventListener('mouseup', () => {{ dragging = false; }});
+    }}
+
+    doc.getElementById('stec-close').onclick = e => {{
+        e.stopPropagation();
+        state.closed = true;
+        panel.style.display = 'none';
+        tab.style.display = 'block';
+    }};
+    tab.onclick = () => {{
+        state.closed = false;
+        panel.style.display = 'block';
+        tab.style.display = 'none';
+    }};
+
+    doc.getElementById('stec-body').innerHTML = buildBody(rows);
+    if (state.closed) {{ panel.style.display = 'none'; tab.style.display = 'block'; }}
+    else {{ panel.style.display = 'block'; tab.style.display = 'none'; }}
+}})();
+</script>
+"""
+    _stcv2.html(html, height=0, width=0)
 
 
 def render_stats_panel(
@@ -1025,9 +1030,4 @@ def render_stats_panel(
                          "delta": ("+" if diff > 0 else "") + str(diff) if diff != 0 else "—",
                          "section": "def"})
 
-    _stcv1.html(
-        f"<script>{_get_stats_panel_component()}({json.dumps(rows)});</script>",
-        height=0,
-        width=0,
-        key="stec_stats_panel_bridge",
-    )
+    _render_stats_panel_component(rows)

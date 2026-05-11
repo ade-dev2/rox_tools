@@ -5,6 +5,8 @@ Helpers for enchants_db.json and awakenings_db.json.
 Used by the Enchant Optimizer and Build Editor.
 """
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 import pandas as pd

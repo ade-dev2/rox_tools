@@ -5,6 +5,8 @@ Create a new build by selecting weapon, armor, and accessory enchants.
 The selected enchants are interpreted into build stats and saved as a standard build.
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
