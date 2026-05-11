@@ -10,10 +10,9 @@ st.markdown(
     """<style>
     .home-title {
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        overflow: visible;
         margin: 0.2rem 0 0.75rem;
-        font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+        font-size: clamp(1rem, 2vw, 1.55rem);
         line-height: 1.15;
     }
     [data-testid="stImage"] img {

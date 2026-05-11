@@ -14,13 +14,13 @@ Unified build schema stored in st.session_state["builds"]:
 """
 
 import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import hashlib
 import json
 import uuid
-from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as _stcv2
 
@@ -218,13 +218,12 @@ def _sanitize_canonical_name(name: str) -> str:
 def _current_user_email() -> str | None:
     """
     Return the authenticated user's email, or None if not logged in.
-    Local dev bypass: if no [auth] section exists in secrets, returns
-    'dev@localhost' so the DB path works without real OAuth.
+    Auth must be configured via Streamlit secrets.
     Uses st.user (Streamlit 1.41+); is_logged_in is only present when
     auth is configured.
     """
     if not st.secrets.get("auth"):
-        return "dev@localhost"
+        return None
     try:
         if not st.user.is_logged_in:
             return None
@@ -663,8 +662,11 @@ def render_sidebar():
     email = _current_user_email()
     if email is None:
         with st.sidebar:
-            if st.button("Log in with Google", key="sb_login", use_container_width=True):
-                st.login("google")
+            if st.secrets.get("auth"):
+                if st.button("Log in with Google", key="sb_login", use_container_width=True):
+                    st.login("google")
+            else:
+                st.warning("Google auth is not configured in Streamlit secrets.")
         st.title("Ragnarok X Tools")
         st.info("Please log in to access your builds.")
         st.stop()
@@ -672,7 +674,7 @@ def render_sidebar():
     init_store()
     with st.sidebar:
         try:
-            display_email = st.user.get("email") if st.secrets.get("auth") else "dev@localhost"
+            display_email = st.user.get("email") if st.secrets.get("auth") else "Not signed in"
         except Exception:
             display_email = email  # fall back to what _current_user_email() already resolved
 
@@ -697,8 +699,8 @@ def render_sidebar():
             st.markdown(
                 (
                     "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
-                    "white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; display:block;'>"
-                    f"Ragnarok X Tools • {display_email}</div>"
+                    "white-space:nowrap; width:100%; display:block;'>"
+                    f"Ragnarok X • {display_email}</div>"
                 ),
                 unsafe_allow_html=True,
             )
