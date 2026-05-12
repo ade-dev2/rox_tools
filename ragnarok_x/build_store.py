@@ -868,7 +868,6 @@ def render_sidebar():
                 }})();
                 </script>""",
                 height=0,
-                key="bs_clipboard_bridge",
             )
             if _copy_val:
                 if _is_all:
