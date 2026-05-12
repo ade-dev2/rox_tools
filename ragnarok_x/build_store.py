@@ -712,9 +712,6 @@ def render_sidebar():
                     unsafe_allow_html=True,
                 )
         with c2:
-            st.markdown(
-                (
-                    "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
             _display_name = st.user.get("email", "User")
             st.markdown(
                 (
@@ -723,7 +720,6 @@ def render_sidebar():
                     f"{_display_name}</div>"
                 ),
                 unsafe_allow_html=True,
-            )
             )
 
         st.divider()
