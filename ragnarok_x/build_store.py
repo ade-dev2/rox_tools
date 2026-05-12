@@ -225,7 +225,11 @@ def _current_user_email() -> str | None:
     Uses st.user (Streamlit 1.41+); is_logged_in is only present when
     auth is configured.
     """
-    if not st.secrets.get("auth"):
+    try:
+        auth_config = st.secrets.get("auth")
+    except Exception:
+        auth_config = None
+    if not auth_config:
         return "dev@localhost"
     try:
         if not st.user.is_logged_in:
