@@ -696,10 +696,16 @@ def render_sidebar():
         st.info("Please log in to access your builds.")
         st.stop()
 
+    # ── Logged-in sidebar ─────────────────────────────────────────────────
+    with st.sidebar:
+        try:
+            avatar_url = st.user.get("picture")
+        except Exception:
+            avatar_url = None
         c1, c2 = st.columns([0.28, 1], gap="small")
         with c1:
-            if avatar_path is not None:
-                st.image(str(avatar_path), width=28)
+            if avatar_url is not None:
+                st.image(avatar_url, width=28)
             else:
                 st.markdown(
                     "<div style='font-size:24px; line-height:28px;'>•</div>",
@@ -716,22 +722,22 @@ def render_sidebar():
             )
 
         st.divider()
-        st.sidebar.page_link("app.py", label="Home", icon="🏠")
+        st.page_link("app.py", label="Home", icon="🏠")
         st.divider()
-        st.sidebar.markdown("**🔧 Tools**")
-        st.sidebar.page_link("pages/Enchant_Lookup.py", label="Enchant Lookup")
+        st.markdown("**🔧 Tools**")
+        st.page_link("pages/Enchant_Lookup.py", label="Enchant Lookup")
 
         st.divider()
-        st.sidebar.markdown("**🏗️ Build Creator**")
-        st.sidebar.page_link("pages/Build_Editor.py", label="From Statsheet")
-        st.sidebar.page_link("pages/Enchant_Build_Creator.py", label="From Enchants")
+        st.markdown("**🏗️ Build Creator**")
+        st.page_link("pages/Build_Editor.py", label="From Statsheet")
+        st.page_link("pages/Enchant_Build_Creator.py", label="From Enchants")
 
         st.divider()
-        st.sidebar.markdown("**⚔️ Build Testing**")
-        st.sidebar.page_link("pages/DMG_Calculator.py", label=" ⤷ Damage Calculator")
-        st.sidebar.page_link("pages/Stat_Optimizer.py", label=" ⤷ Stat Optimizer")
-        st.sidebar.page_link("pages/Enchant_Optimizer.py", label=" ⤷ Enchant Optimizer")
-        #st.sidebar.page_link("pages/DPS_Simulator.py", label=" ⤷ DPS Simulator")
+        st.markdown("**⚔️ Build Testing**")
+        st.page_link("pages/DMG_Calculator.py", label=" ⤷ Damage Calculator")
+        st.page_link("pages/Stat_Optimizer.py", label=" ⤷ Stat Optimizer")
+        st.page_link("pages/Enchant_Optimizer.py", label=" ⤷ Enchant Optimizer")
+        #st.page_link("pages/DPS_Simulator.py", label=" ⤷ DPS Simulator")
 
         st.divider()
         st.header("Builds")
