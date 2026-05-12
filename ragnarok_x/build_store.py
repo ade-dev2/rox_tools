@@ -715,10 +715,15 @@ def render_sidebar():
             st.markdown(
                 (
                     "<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
+            _display_name = st.user.get("email", "User")
+            st.markdown(
+                (
+                    f"<div style='font-size:0.84rem; font-weight:600; line-height:28px; "
                     "white-space:nowrap; width:100%; display:block;'>"
-                    "Bob The Builder</div>"
+                    f"{_display_name}</div>"
                 ),
                 unsafe_allow_html=True,
+            )
             )
 
         st.divider()
