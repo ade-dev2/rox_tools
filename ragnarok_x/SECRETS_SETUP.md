@@ -48,10 +48,10 @@ Each user authenticates with their own account, so builds are stored separately 
 redirect_uri = "https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback"
 cookie_secret = "CHANGE_ME_TO_A_RANDOM_LONG_STRING"
 
-[[auth.providers]]
-name = "google"
+[auth.google]
 client_id = "YOUR_CLIENT_ID.apps.googleusercontent.com"
 client_secret = "YOUR_CLIENT_SECRET"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
 ```
 
 4. **Save**
@@ -89,10 +89,10 @@ client_secret = "YOUR_CLIENT_SECRET"
 redirect_uri = "https://<your-current-streamlit-subdomain>.streamlit.app/oauth2callback"
 cookie_secret = "CHANGE_ME_TO_A_RANDOM_LONG_STRING"
 
-[[auth.providers]]
-name = "github"
+[auth.github]
 client_id = "YOUR_CLIENT_ID"
 client_secret = "YOUR_CLIENT_SECRET"
+server_metadata_url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
 ```
 
 ---

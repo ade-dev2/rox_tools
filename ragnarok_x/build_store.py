@@ -678,13 +678,13 @@ def render_sidebar():
                         or "https://<your-app>.streamlit.app/oauth2callback"
                     )
                     snippet = (
-                        "[auth]\\n"
-                        f"redirect_uri = \\\"{redirect_uri}\\\"\\n"
-                        "cookie_secret = \\\"<random-32+ chars>\\\"\\n\\n"
-                        "[[auth.providers]]\\n"
-                        "name = \\\"google\\\"\\n"
-                        "client_id = \\\"<google-client-id>\\\"\\n"
-                        "client_secret = \\\"<google-client-secret>\\\""
+                        "[auth]\n"
+                        f"redirect_uri = \"{redirect_uri}\"\n"
+                        "cookie_secret = \"<random-32+ chars>\"\n\n"
+                        "[auth.google]\n"
+                        "client_id = \"<google-client-id>\"\n"
+                        "client_secret = \"<google-client-secret>\"\n"
+                        "server_metadata_url = \"https://accounts.google.com/.well-known/openid-configuration\""
                     )
                     st.error(
                         "Google login is not configured for this deployment. "
