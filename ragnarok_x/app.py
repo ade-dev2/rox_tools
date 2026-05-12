@@ -35,7 +35,7 @@ if logo_path.exists():
 
 st.markdown('<h1 class="home-title">Privacy: Ragnarok X Tools</h1>', unsafe_allow_html=True)
 st.markdown("""
-Use the sidebar to navigate between tools. All data is saved locally on your browser only.
+Use the sidebar to navigate between tools.
 
 ### 🔧 Tools
 - **Enchant Lookup** — Look up enchant stat values and quality probabilities.

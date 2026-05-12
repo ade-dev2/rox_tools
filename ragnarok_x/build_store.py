@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 import hashlib
 import json
 import uuid
+from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as _stcv1
 from streamlit.errors import StreamlitAuthError
@@ -729,7 +730,13 @@ def render_sidebar():
         st.page_link("pages/Enchant_Lookup.py", label="Enchant Lookup")
 
         st.divider()
-        st.markdown("**🏗️ Build Creator**")
+        icon_path = Path(__file__).resolve().parents[1] / "SCR 346.png"
+        icon_col, label_col = st.columns([0.18, 1], gap="small")
+        with icon_col:
+            if icon_path.exists():
+                st.image(str(icon_path), width=24)
+        with label_col:
+            st.markdown("**Build Creator**")
         st.page_link("pages/Build_Editor.py", label="From Statsheet")
         st.page_link("pages/Enchant_Build_Creator.py", label="From Enchants")
 

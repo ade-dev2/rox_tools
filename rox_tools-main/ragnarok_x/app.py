@@ -5,7 +5,7 @@ st.set_page_config(page_title="Ragnarok X Tools", layout="centered")
 render_sidebar()
 st.title("Ragnarok X: Next Generation Tools")
 st.markdown("""
-Use the sidebar to navigate between tools. All data is saved locally on your browser only.
+Use the sidebar to navigate between tools.
 
 ### 🔧 Tools
 - **Enchant Lookup** — Look up enchant stat values and quality probabilities.
