@@ -1047,5 +1047,4 @@ def render_stats_panel(
         f"<script>{_get_stats_panel_component()}({json.dumps(rows)});</script>",
         height=0,
         width=0,
-        key="stec_stats_panel_bridge",
     )
