@@ -736,7 +736,7 @@ def render_sidebar():
             if icon_path.exists():
                 st.image(str(icon_path), width=24)
         with label_col:
-            st.markdown("**Build Creator**")
+            st.markdown("**Bob the Builder**")
         st.page_link("pages/Build_Editor.py", label="From Statsheet")
         st.page_link("pages/Enchant_Build_Creator.py", label="From Enchants")
 

@@ -22,11 +22,11 @@ from data.enchants_data import (
     get_max_awakening_for_enchant_levels, get_enchant_awakening_info,
 )
 
-st.set_page_config(page_title="Build Creator — From Enchants", layout="wide")
+st.set_page_config(page_title="Bob the Builder — From Enchants", layout="wide")
 
 render_sidebar()
 
-st.title("Build Creator — From Enchants")
+st.title("Bob the Builder — From Enchants")
 st.caption("Select your weapon, armor, and accessory enchants to automatically derive build stats.")
 
 init_store()
