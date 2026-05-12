@@ -25,3 +25,9 @@
 **Files Changed:** src/rox_tools/ragnarok_x/.streamlit/secrets.toml, src/rox_tools/ragnarok_x/app.py, src/rox_tools/ragnarok_x/build_store.py, lib/python3.14/site-packages/streamlit/runtime/metrics_util.py, lib/python3.14/site-packages/streamlit/user_info.py, lib/python3.14/site-packages/streamlit/auth_util.py, app.py, build_store.py, SECRETS_SETUP.md, db.py, secrets.toml, metrics_util.py, user_info.py, auth_util.py, pve_multiplier.py
 
 ---
+## 2026-05-12T04:04:01.091Z — codex
+**Summary:** Discussed: same error - 400: 'NoneType' object does not support item as…; i got a new secret from google; still getting the same error; i think in google console - > audience it was in testing but…; getting same error - 400: 'NoneType' object does not support…
+**Duration:** 25 min
+**Files Changed:** pages/Enchant_Lookup.py, src/rox_tools/ragnarok_x/app.py, pages/Enchant_Build_Creator.py, src/rox_tools/ragnarok_x/pages/Build_Editor.py, src/rox_tools/ragnarok_x/build_store.py, lib/python3.14/site-packages/streamlit/runtime/metrics_util.py, Home.py, app.py, Enchant_Lookup.py, build_store.py, Enchant_Build_Creator.py, Build_Editor.py, metrics_util.py
+
+---

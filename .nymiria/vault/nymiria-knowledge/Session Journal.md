@@ -142,3 +142,33 @@ Discussed: you have access to my streamlit. can you include redirect_ur…; i ge
 - refresh automatically.
 
 ---
+
+## May 11, 2026
+
+Discussed: same error - 400: 'NoneType' object does not support item as…; i got a new secret from google; still getting the same error; i think in google console - > audience it was in testing but…; getting same error - 400: 'NoneType' object does not support…
+
+**Files touched:**
+- `pages/Enchant_Lookup.py`
+- `src/rox_tools/ragnarok_x/app.py`
+- `pages/Enchant_Build_Creator.py`
+- `src/rox_tools/ragnarok_x/pages/Build_Editor.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `Home.py`
+- `app.py`
+- `Enchant_Lookup.py`
+- `build_store.py`
+
+**Next steps:**
+- publish the app.
+- commit push deploy
+- try a different Streamlit version.
+- be dynamic to show their authorized email address here
+- use the same hyperlink the the enchant lookup link in left pane
+- push first so the main repo can point to the new commit.
+- use `st.user` instead:
+- auto-redeploy from `main`. If it still errors, share the new log traceback.
+- resize, don’t crop it. and change it to *new icon* Bob the Builder
+- auto-redeploy in about 30–90 seconds. If it still errors, I can check the live l
+
+---
