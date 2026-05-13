@@ -21,7 +21,12 @@ from pymongo import MongoClient
 def _get_db():
     # Read from secrets.toml key "uri" under [mongodb], not "MONGO_URI".
     uri = st.secrets.get("mongodb", {}).get("uri") or st.secrets.get("MONGO_URI", "")
-    client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+    client = MongoClient(
+        uri,
+        serverSelectionTimeoutMS=10000,
+        tls=True,
+        tlsAllowInvalidCertificates=False,
+    )
     return client["rox"]
 
 
