@@ -172,3 +172,33 @@ Discussed: same error - 400: 'NoneType' object does not support item as…; i go
 - auto-redeploy in about 30–90 seconds. If it still errors, I can check the live l
 
 ---
+
+## May 12, 2026
+
+Discussed: google login is working!! i logged into google but the url v…; no there is no arrow; minor changes here - user account name: i see the user icon …; Enchant lookup here should use the same hyperlink the the en…; commit push and deploy
+
+**Files touched:**
+- `pages/Enchant_Lookup.py`
+- `src/rox_tools/ragnarok_x/app.py`
+- `pages/Enchant_Build_Creator.py`
+- `src/rox_tools/ragnarok_x/pages/Build_Editor.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `Home.py`
+- `app.py`
+- `Enchant_Lookup.py`
+- `build_store.py`
+
+**Next steps:**
+- try a different Streamlit version.
+- be dynamic to show their authorized email address here
+- use the same hyperlink the the enchant lookup link in left pane
+- push first so the main repo can point to the new commit.
+- use `st.user` instead:
+- auto-redeploy from `main`. If it still errors, share the new log traceback.
+- resize, don’t crop it. and change it to *new icon* Bob the Builder
+- auto-redeploy in about 30–90 seconds. If it still errors, I can check the live l
+- be able to save builds
+- auto-deploy from this commit.
+
+---
