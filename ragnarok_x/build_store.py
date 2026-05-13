@@ -735,6 +735,9 @@ def render_sidebar():
                 unsafe_allow_html=True,
             )
 
+        if st.button("Sign out", key="sb_logout", use_container_width=True):
+            st.logout()
+
         st.divider()
         st.page_link("app.py", label="Home", icon="🏠")
         st.divider()
