@@ -13,6 +13,7 @@ reused across Streamlit reruns rather than re-opened each time.
 
 import uuid
 import datetime
+import certifi
 import streamlit as st
 from pymongo import MongoClient
 
@@ -24,8 +25,7 @@ def _get_db():
     client = MongoClient(
         uri,
         serverSelectionTimeoutMS=10000,
-        tls=True,
-        tlsAllowInvalidCertificates=False,
+        tlsCAFile=certifi.where(),
     )
     return client["rox"]
 
