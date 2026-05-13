@@ -961,7 +961,7 @@ _STATS_PANEL_JS = """
         } else {
             panel.style.bottom = '24px';   panel.style.right  = '24px';
         }
-        doc.body.appendChild(panel);
+        (doc.body || doc.documentElement).appendChild(panel);
 
         tab = doc.createElement('div');
         tab.id = 'stec-tab';
@@ -974,7 +974,7 @@ _STATS_PANEL_JS = """
             cursor: 'pointer', zIndex: '9999', display: 'none',
             boxShadow: '0 2px 12px rgba(0,0,0,.5)',
         });
-        doc.body.appendChild(tab);
+        (doc.body || doc.documentElement).appendChild(tab);
 
         const hdr = doc.getElementById('stec-hdr');
         let dragging = false, ox = 0, oy = 0;
