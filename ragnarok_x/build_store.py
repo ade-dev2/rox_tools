@@ -253,13 +253,15 @@ def _user_key() -> str | None:
 
 
 def _sync_to_db() -> None:
-    """Write the current session builds to MongoDB. Silently toasts on failure."""
+    """Write the current session builds to MongoDB."""
     key = _user_key()
     if key:
         try:
             save_builds_for_user(key, st.session_state["builds"])
+            st.session_state["_db_sync_error"] = None
         except Exception as e:
-            st.toast(f"⚠️ DB sync failed: {e}")
+            st.session_state["_db_sync_error"] = str(e)
+            st.error(f"Save failed — builds will not persist: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -283,11 +285,18 @@ def init_store():
         pass
     if key:
         try:
-            st.session_state["builds"] = load_builds_for_user(key)
-        except Exception:
+            loaded = load_builds_for_user(key)
+            st.session_state["builds"] = loaded
+            st.session_state["_db_load_count"] = len(loaded)
+            st.session_state["_db_load_error"] = None
+        except Exception as e:
             st.session_state["builds"] = {}
+            st.session_state["_db_load_count"] = 0
+            st.session_state["_db_load_error"] = str(e)
     else:
         st.session_state["builds"] = {}
+        st.session_state["_db_load_count"] = 0
+        st.session_state["_db_load_error"] = None
     st.session_state["_builds_user_key"] = key
 
 
@@ -752,6 +761,17 @@ def render_sidebar():
 
         st.divider()
         st.header("Builds")
+
+        # ── DB status (helps diagnose persistence issues) ─────────────────
+        load_err = st.session_state.get("_db_load_error")
+        sync_err = st.session_state.get("_db_sync_error")
+        load_count = st.session_state.get("_db_load_count")
+        if load_err:
+            st.error(f"Failed to load builds from DB: {load_err}")
+        elif sync_err:
+            st.error(f"Last save failed: {sync_err}")
+        elif load_count is not None:
+            st.caption(f"Loaded {load_count} build(s) from cloud.")
 
         # ── Compact styling for build list rows ───────────────────────────
         st.markdown(
