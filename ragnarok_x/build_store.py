@@ -268,17 +268,19 @@ def _sync_to_db() -> None:
 def init_store():
     """
     Initialise the builds store.
-    On the first call per session, ensures DB indexes exist then loads builds
-    from MongoDB for the logged-in user. Subsequent calls are no-ops.
+    Loads from MongoDB for the current user. Re-fetches if the logged-in user
+    changes (e.g. after OAuth completes on a fresh page load).
     """
-    if "builds" in st.session_state:
+    key = _user_key()
+    # Re-fetch whenever the authenticated user changes (covers the case where
+    # the store was initialised before OAuth completed and key was None).
+    if st.session_state.get("_builds_user_key") == key and "builds" in st.session_state:
         return
     from db import ensure_indexes
     try:
         ensure_indexes()
     except Exception:
         pass
-    key = _user_key()
     if key:
         try:
             st.session_state["builds"] = load_builds_for_user(key)
@@ -286,6 +288,7 @@ def init_store():
             st.session_state["builds"] = {}
     else:
         st.session_state["builds"] = {}
+    st.session_state["_builds_user_key"] = key
 
 
 def get_builds() -> dict:
