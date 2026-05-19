@@ -37,3 +37,9 @@
 **Files Changed:** pages/Enchant_Lookup.py, src/rox_tools/ragnarok_x/app.py, pages/Enchant_Build_Creator.py, src/rox_tools/ragnarok_x/pages/Build_Editor.py, src/rox_tools/ragnarok_x/build_store.py, lib/python3.14/site-packages/streamlit/runtime/metrics_util.py, Home.py, app.py, Enchant_Lookup.py, build_store.py, Enchant_Build_Creator.py, Build_Editor.py, metrics_util.py
 
 ---
+## 2026-05-19T06:16:49.061Z — codex
+**Summary:** Discussed: page has error when i opened it. From stat sheet -> bottom o…; when i click “save build” at the bottom, i got this error no…; is this fix deployed?; commit and deploy please. whenever i save build it has an er…; all users reported that once they log into google, their sta…
+**Duration:** 5 min
+**Files Changed:** src/rox_tools/ragnarok_x/pages/Build_Editor.py, src/rox_tools/ragnarok_x/build_store.py, lib/python3.14/site-packages/streamlit/runtime/metrics_util.py, Build_Editor.py, build_store.py, metrics_util.py, bufferedData-CKlkiO8t.js, page-9cfZfd7y.js, bot.js, Node.js, discord.js
+
+---

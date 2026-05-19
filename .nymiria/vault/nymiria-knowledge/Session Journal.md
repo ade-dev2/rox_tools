@@ -202,3 +202,33 @@ Discussed: google login is working!! i logged into google but the url v…; no t
 - auto-deploy from this commit.
 
 ---
+
+## May 18, 2026
+
+Discussed: page has error when i opened it. From stat sheet -> bottom o…; when i click “save build” at the bottom, i got this error no…; is this fix deployed?; commit and deploy please. whenever i save build it has an er…; all users reported that once they log into google, their sta…
+
+**Files touched:**
+- `src/rox_tools/ragnarok_x/pages/Build_Editor.py`
+- `src/rox_tools/ragnarok_x/build_store.py`
+- `lib/python3.14/site-packages/streamlit/runtime/metrics_util.py`
+- `Build_Editor.py`
+- `build_store.py`
+- `metrics_util.py`
+- `bufferedData-CKlkiO8t.js`
+- `page-9cfZfd7y.js`
+- `bot.js`
+- `Node.js`
+
+**Next steps:**
+- auto-redeploy in about 30–90 seconds. If it still errors, I can check the live l
+- be able to save builds
+- auto-deploy from this commit.
+- be gone and builds will persist correctly.
+- resolve the build persistence problem.
+- show "Loaded N build(s) from cloud." instead of the SSL error. If it still shows
+- re-enter and save their builds once — nothing was ever persisted.
+- see an entry `0.0.0.0/0` with status "Active." If not, click "Add IP Address" →
+- connect successfully now — try loading it.
+- be there. That's the Streamlit viewer auth sign-out for the app itself, separate
+
+---
