@@ -60,7 +60,15 @@ with col_city:
     )
 
 with col_equip:
-    all_equip = sorted(df["equipment_en"].dropna().unique().tolist())
+    canonical_equip = [
+        "One-handed Weapon",
+        "Two-handed Weapon",
+        "Dagger",
+        "Sub-weapon",
+        "Armor",
+        "Accessories",
+    ]
+    all_equip = sorted(set(df["equipment_en"].dropna().unique().tolist()) | set(canonical_equip))
     selected_equip = st.multiselect(
         "Equipment", options=all_equip,
         placeholder="All equipment"

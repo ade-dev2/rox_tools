@@ -177,9 +177,16 @@ fe_main_slots: list[dict | None] = list(
 )
 
 fe_sub_slots: list[dict | None] = [None, None, None]
+sub_equip_label = None
 if fe_weapon_type == "one-handed":
+    sub_equip_label = WEAPON_EQUIP_LABEL["sub"]
     fe_sub_slots = list(
-        _piece_section("Sub-Weapon", "be_fe_sub", WEAPON_EQUIP_LABEL["sub"], ENCHANT_STAT_FIELD_MAP, fe_weapon_lvl)
+        _piece_section("Sub-Weapon", "be_fe_sub", sub_equip_label, ENCHANT_STAT_FIELD_MAP, fe_weapon_lvl)
+    )
+elif fe_weapon_type == "dagger":
+    sub_equip_label = WEAPON_EQUIP_LABEL["dagger"]
+    fe_sub_slots = list(
+        _piece_section("Off-hand Dagger", "be_fe_sub", sub_equip_label, ENCHANT_STAT_FIELD_MAP, fe_weapon_lvl)
     )
 elif fe_weapon_type == "dagger":
     fe_sub_slots = list(
@@ -214,7 +221,7 @@ fe_def_acc = {f: float(dflt) for f, (_, dflt) in DEFENSIVE_FIELDS.items()}
 
 for _slot, _smap, _elabel in (
     [(s, ENCHANT_STAT_FIELD_MAP,   main_equip_label)       for s in fe_main_slots  if s] +
-    [(s, ENCHANT_STAT_FIELD_MAP,   WEAPON_EQUIP_LABEL["sub"]) for s in fe_sub_slots if s] +
+    [(s, ENCHANT_STAT_FIELD_MAP,   sub_equip_label)        for s in fe_sub_slots if s and sub_equip_label] +
     [(s, ARMOR_STAT_FIELD_MAP,     ARMOR_EQUIP_LABEL)      for s in fe_armor_slots  if s] +
     [(s, ACCESSORY_STAT_FIELD_MAP, ACCESSORY_EQUIP_LABEL)  for s in fe_acc_slots    if s]
 ):
