@@ -28,7 +28,9 @@ st.title("Enchant Lookup")
 _DB_PATH = Path(__file__).parent.parent / "data" / "enchants_db.json"
 
 @st.cache_data
-def _load_db() -> pd.DataFrame:
+def _load_db(db_mtime_ns: int) -> pd.DataFrame:
+    # Include file mtime in the cache key so data refreshes when JSON changes.
+    _ = db_mtime_ns
     with open(_DB_PATH, encoding="utf-8") as f:
         data = json.load(f)
     result = pd.DataFrame(data)
@@ -39,7 +41,7 @@ def _load_db() -> pd.DataFrame:
             result[col] = pd.to_numeric(result[col], errors="coerce")
     return result
 
-df = _load_db()
+df = _load_db(_DB_PATH.stat().st_mtime_ns)
 
 # ---------------------------------------------------------------------------
 # Filter controls
